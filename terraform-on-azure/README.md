@@ -4,6 +4,37 @@
 - [1. Introduction](#1-introduction)
 - [2. L’écosystème Kubernetes](#2-lécosystème-kubernetes)
 - [3. Architecture de Kubernetes](#3-architecture-de-kubernetes)
+  - [3.1 Worker Node In K8s Cluster:](#31-worker-node-in-k8s-cluster)
+  - [3.2 Master Node in K8s cluster:](#32-master-node-in-k8s-cluster)
+- [4. Concepts de Kubernetes](#4-concepts-de-kubernetes)
+- [4.1 Principes d’orchestration](#41-principes-dorchestration)
+  - [4.1.1 Haute disponibilité](#411-haute-disponibilité)
+  - [4.1.2 Répartition de charge (load balancing)](#412-répartition-de-charge-load-balancing)
+  - [4.1.3 Healthchecks](#413-healthchecks)
+  - [4.1.4 Découverte de service (service discovery)](#414-découverte-de-service-service-discovery)
+  - [4.1.5 Les stratégies de déploiement](#415-les-stratégies-de-déploiement)
+- [5. Objets Kubernetes](#5-objets-kubernetes)
+  - [5.1 L’API et les Objets Kubernetes](#51-lapi-et-les-objets-kubernetes)
+  - [5.2 La commande apply](#52-la-commande-apply)
+  - [5.3 Syntaxe de base d’une description YAML Kubernetes](#53-syntaxe-de-base-dune-description-yaml-kubernetes)
+  - [5.4 Objets de base](#54-objets-de-base)
+    - [5.4.1 Les namespaces](#541-les-namespaces)
+    - [5.4.2 Les Pods](#542-les-pods)
+    - [5.4.3 Les ReplicaSet](#543-les-replicaset)
+    - [5.4.4 Les Deployments](#544-les-deployments)
+    - [5.4.5 Les Services](#545-les-services)
+    - [5.4.5 Le stockage dans Kubernetes: StorageClasses](#545-le-stockage-dans-kubernetes-storageclasses)
+    - [5.4.5 Le stockage dans Kubernetes: StatefulSets](#545-le-stockage-dans-kubernetes-statefulsets)
+    - [5.4.5 Le stockage dans Kubernetes: DaemonSets](#545-le-stockage-dans-kubernetes-daemonsets)
+    - [5.4.5 Le stockage dans Kubernetes: Les ConfigMaps](#545-le-stockage-dans-kubernetes-les-configmaps)
+    - [5.4.5 Le stockage dans Kubernetes: les Secrets](#545-le-stockage-dans-kubernetes-les-secrets)
+    - [5.4.5 Le stockage dans Kubernetes: Les CRD et Operators](#545-le-stockage-dans-kubernetes-les-crd-et-operators)
+- [6. Le réseau dans Kubernetes](#6-le-réseau-dans-kubernetes)
+  - [6.1 Les objets Services](#61-les-objets-services)
+  - [6.2 Les network policies](#62-les-network-policies)
+  - [6.3 Le loadbalancing](#63-le-loadbalancing)
+  - [6.4 Les objets Ingresses](#64-les-objets-ingresses)
+- [7. Helm, le gestionnaire de paquets Kubernetes](#7-helm-le-gestionnaire-de-paquets-kubernetes)
 
 ## 1. Introduction
 
@@ -29,11 +60,11 @@ Voici quelques exemples d'écosystèmes Kubernetes populaires :
 - **k3s** : Un écosystème Kubernetes fait par l’entreprise Rancher et axé sur la légèreté. Il remplace etcd par une base de données Postgres, utilise Traefik pour l’ingress et Klipper pour le loadbalancing.
 - **Openshift** : Une version de Kubernetes configurée et optimisée par Red Hat pour être utilisée dans son écosystème. Tout est intégré donc plus guidé, avec l’inconvénient d’être un peu captif·ve de l’écosystème et des services vendus par Red Hat.
   
-![image info](./src/imgs/image.png)
+![image info](./src/imgs/k8s_archi_basic.png)
 
 ## 3. Architecture de Kubernetes
 
-Kubernetes adopte une architecture master/worker, où un cluster Kubernetes est composé d'au moins un nœud maître (master node) et de plusieurs nœuds de travail (worker nodes), également appelés simplement "nœuds". Ces nœuds peuvent être des machines physiques ou virtuelles; vous interagirez rarement directement avec les nœuds.
+Kubernetes adopte une architecture **master/worker**, où un cluster Kubernetes est composé d'au moins un nœud maître (master node) et de plusieurs nœuds de travail (worker nodes), également appelés simplement "nœuds". Ces nœuds peuvent être des machines physiques ou virtuelles; vous interagirez rarement directement avec les nœuds.
 
 - **Nœud maître** : il orchestre l'ensemble du cluster. Il gère la planification des applications, la distribution des ressources et assure la communication entre les nœuds de travail.
     Le “master” fait référence à un ensemble de processus gérant l’état du cluster. Le master peut également être répliqué pour la disponibilité et la redondance.
@@ -41,4 +72,244 @@ Kubernetes adopte une architecture master/worker, où un cluster Kubernetes est 
   
 Cette architecture permet une gestion flexible et évolutive des applications, avec une séparation claire des rôles entre la gestion du cluster (nœud maître) et l'exécution des tâches (nœuds de travail).
 
-![My Diagram](./src/imgs/archi.drawio.svg)
+
+### 3.1 Worker Node In K8s Cluster:
+
+![image info](./src/imgs/k8s_worker_node.png)
+
+En tant que développeur ou administrateur Kubernetes, vous interagirez principalement avec les nœuds de travail (worker nodes) pour déployer, mettre à jour ou autoscaler vos applications conteneurisées. Un nœud de travail exécute le travail réel du cluster et contient des pods, qui sont des abstractions de vos applications conteneurisées.
+
+Chaque nœud de travail exécute trois processus clés :
+1. **Container Runtime** : C'est l'environnement dans lequel les conteneurs sont exécutés. Exemples : containerd, CRI-O, Docker.
+2. **kubelet** : Le kubelet est un agent principal qui s'exécute sur chaque nœud de travail. Il interagit à la fois avec le nœud et les conteneurs sur ce nœud. Il a plusieurs responsabilités clés :
+   - **Gestion des Pods** : Il maintient un ensemble de pods (composés de un ou plusieurs conteneurs) sur le système local du nœud.
+   - **Enregistrement et Rapport** : Il enregistre le nœud auprès du cluster Kubernetes, envoie des événements, des états des pods, et rapporte l'utilisation des ressources.
+   - **Observation des PodSpecs** : Le kubelet surveille les PodSpecs (descriptions de pods en YAML ou JSON) via l'API Kubernetes et veille à ce que les conteneurs décrits dans ces PodSpecs soient en cours d'exécution et en bonne santé.
+   - Lorsque Kubernetes veut planifer un pod, il envoie des PodSecs du pod au Kubelet. Le kubelet s’assure alors que les conteneurs sont sains et son conforme à la configuration déclarative.
+3. **kube-proxy** : Kube proxy permet de mettre les nodes en réseau avec des règles qui assurent la communication entre les pods et et les entités extérieures au cluster.
+  Kube-proxy peut fonctionner selon 3 modes : iptables, ipvs et userspace. Chaque mode est adapté en fonction de la taille du cluster.
+    
+Ces processus doivent être installés et fonctionnels sur chaque nœud de travail pour garantir une gestion efficace des applications conteneurisées. Cependant, la gestion des nœuds de travail et la planification des pods dépendent du nœud maître (Master Node).
+
+### 3.2 Master Node in K8s cluster:
+
+![image info](./src/imgs/k8s_master_node.png)
+
+Le nœud maître, également connu sous le nom de plan de contrôle (control plane), est chargé de gérer efficacement les nœuds de travail (ou nœuds esclaves). Ses principales responsabilités incluent :
+   - Planification des Pods : Décider sur quels nœuds de travail les pods doivent être déployés.
+   - Surveillance des Nœuds et Pods : Observer l'état des nœuds de travail et des pods.
+   - Démarrage et Redémarrage des Pods : Assurer que les pods sont lancés et redémarrés si nécessaire.
+   - Gestion des Nouveaux Nœuds de Travail : Intégrer les nouveaux nœuds de travail dans le cluster.
+
+Les nœuds maîtres dans un cluster Kubernetes exécutent les processus clés suivants :
+   - **kube-apiserver** : Le point d'entrée principal pour toutes les communications avec le cluster, traitant les requêtes API et coordonnant les interactions entre les différents composants Kubernetes.
+   - **kube-controller-manager** (kubectl): Gère les contrôleurs qui surveillent l'état du cluster et apportent les modifications nécessaires pour maintenir l'état désiré (par exemple, redémarrage des pods en cas de défaillance).
+   - **kube-scheduler** : Assigne les pods aux nœuds de travail en fonction des ressources disponibles et des contraintes de planification.
+   - **etcd** : La base de données distribuée qui stocke l'état actuel du cluster, y compris les configurations et les métadonnées des objets Kubernetes.
+
+![image info](./src/imgs/k8s_archi.png)
+
+
+## 4. Concepts de Kubernetes
+## 4.1 Principes d’orchestration
+### 4.1.1 Haute disponibilité
+- Faire en sorte qu’un service ait un “uptime” élevé.
+- On veut que le service soit tout le temps accessible même lorsque certaines ressources manquent :
+  - elles tombent en panne
+  - elles sont sorties du service pour mise à jour, maintenance ou modification
+- Pour cela on doit avoir des ressources multiples…
+  - Plusieurs serveurs
+  - Plusieurs versions des données
+  - Plusieurs accès réseau
+- Il faut que les ressources disponibles prennent automatiquement le relais des ressources indisponibles. Pour cela on utilise généralement:
+  - des “load balancers” : aiguillages réseau intelligents
+  - des “healthchecks” : une vérification de la santé des applications
+- Mais aussi :
+  - des réseaux de secours
+  - des IP flottantes qui fonctionnent comme des load balancers
+  - etc.
+- Nous allons voir que Kubernetes intègre automatiquement les principes de load balancing et de healthcheck dans l’orchestration de conteneurs
+### 4.1.2 Répartition de charge (load balancing)
+
+![image info](./src/imgs/k8s_loadbalancer.png){ width=40% }
+
+- Un load balancer : une sorte d'“aiguillage” de trafic réseau, typiquement HTTP(S) ou TCP.
+- Un aiguillage intelligent qui se renseigne sur plusieurs critères avant de choisir la direction.
+- Cas d’usage :
+  - Éviter la surcharge : les requêtes sont réparties sur différents backends pour éviter de les saturer.
+- L’objectif est de permettre la haute disponibilité : on veut que notre service soit toujours disponible, même en période de panne/maintenance.
+  - Donc on va dupliquer chaque partie de notre service et mettre les différentes instances derrière un load balancer.
+  - Le load balancer va vérifier pour chaque backend s’il est disponible (healthcheck) avant de rediriger le trafic.
+  - Répartition géographique : en fonction de la provenance des requêtes on va rediriger vers un datacenter adapté (+ proche).
+- Solutions de load balancing externe
+  - HAProxy : Le plus répandu en load balancing.
+  - Traefik : Simple à configurer et se fond dans l’écosystème des conteneurs Docker et Kubernetes
+  - NGINX : Serveur web central qui a depuis quelques années des fonctions puissantes de load balancing et TCP forwarding.
+
+### 4.1.3 Healthchecks
+Fournir à l’application une façon d’indiquer qu’elle est disponible, c’est-à-dire :
+- qu’elle est démarrée (liveness)
+- qu’elle peut répondre aux requêtes (readiness).
+
+![image info](./src/imgs/k8s_healthchecks_1.png)
+![image info](./src/imgs/k8s_healthchecks_2.png)
+
+### 4.1.4 Découverte de service (service discovery)
+Classiquement, les applications ne sont pas informées du contexte dans lequel elles tournent : la configuration doit être opérée de l’extérieur de l’application.
+  - par exemple avec des fichiers de configuration fournie via des volumes
+  - ou via des variables d’environnement
+  
+Mais dans un environnement hautement dynamique comme Kubernetes, la configuration externe ne suffit pas pour gérer des applications complexes distribuées qui doivent se déployer régulièrement, se parler et parler avec l’extérieur.
+<u>La découverte de service désigne généralement les méthodes qui permettent à un programme de chercher autour de lui</u> (généralement sur le réseau ou dans l’environnement) ce dont il a besoin.
+  - La mise en place d’un système de découverte de service permet de rendre les applications plus autonomes dans leur (auto)configuration.
+  - Elles vont pouvoir récupérer des informations sur leur contexte (dev ou prod, Etats-Unis ou Europe ?)
+  - Ce type d’automatisation permet de limiter la complexité du déploiement.
+Concrètement, au sein d’un orchestrateur, un système de découverte de service est un serveur qui est au courant automatiquement :
+  - de chaque conteneur lancé. 
+  - du contexte dans lequel chaque conteneur a été lancé.
+  
+Ensuite il suffit aux applications de pouvoir interroger ce serveur pour s’autoconfigurer.
+Un exemple historique de découverte de service est le DNS : on fait une requête vers un serveur spécial pour retrouver une adresse IP (on découvre le serveur dont on a besoin). Cependant le DNS n’a pas été pensé pour ça :
+  - certaines application ne rafraichissent pas assez souvent leurs enregistrements DNS en cache
+le DNS devient trop complexe à partir de quelques dizaines d’enregistrements
+
+**Solutions de découverte de service**
+- Consul (Hashicorp) : assez simple d’installation et fourni avec une sympathique interface web.
+- etcd : a prouvé ses performances à plus grande échelle mais un peu plus complexe
+
+### 4.1.5 Les stratégies de déploiement
+SRC : https://blog.container-solutions.com/kubernetes-deployment-strategies
+
+Il existe deux types de stratégies de rollout native à Kubernetes :
+- Recreate : arrêter les pods avec l’ancienne version en même temps et créer les nouveaux simultanément
+- RollingUpdate : mise à jour continue, arrêt des anciens pods les uns après les autres et création des nouveaux au fur et à mesure (paramétrable)
+
+Mais il existe un panel de stratégies plus large pour updater ses apps :
+- blue/green : publier une nouvelle version à côté de l’ancienne puis changer de trafic
+- canary : diffuser une nouvelle version à un sous-ensemble d’utilisateurs, puis procéder à un déploiement complet
+- A/B testing: diffusion d’une nouvelle version à un sous-ensemble d’utilisateurs de manière précise (en-têtes HTTP, cookie, région, etc.).
+  - pas possible par défaut avec Kubernetes, implique une infrastructure plus avancée avec reverse proxy (Istio, Traefik, nginx/haproxy personnalisé, etc.).
+
+## 5. Objets Kubernetes
+### 5.1 L’API et les Objets Kubernetes
+Utiliser Kubernetes consiste à déclarer des objets grâce à l’API Kubernetes pour décrire l’état souhaité d’un cluster : quelles applications ou autres processus exécuter, quelles images elles utilisent, le nombre de replicas, les ressources réseau et disque que vous mettez à disposition, etc.
+
+On définit des objets généralement via l’interface en ligne de commande et **kubectl** de deux façons :
+- en lançant une commande **kubectl run conteneur** ..., **kubectl expose** ...
+- en décrivant un objet dans un fichier YAML ou JSON et en le passant au client **kubectl apply -f monpod.yml**
+  
+Vous pouvez également écrire des programmes qui utilisent directement l’API Kubernetes pour interagir avec le cluster et définir ou modifier l’état souhaité. 
+
+### 5.2 La commande apply
+
+Kubernetes encourage le principe de l’infrastructure-as-code : il est recommandé d’utiliser une description YAML et versionnée des objets et configurations Kubernetes plutôt que la CLI.
+
+Pour cela la commande de base est **kubectl apply -f object.yaml**.
+
+La commande inverse **kubectl delete -f object.yaml** permet de détruire un objet précédement appliqué dans le cluster à partir de sa description.
+
+Lorsqu’on vient d’appliquer une description on peut l’afficher dans le terminal avec **kubectl apply -f myobj.yaml view-last-applied**
+
+Globalement Kubernetes garde un historique de toutes les transformations des objets : on peut explorer, par exemple avec la commande **kubectl rollout history deployment**.
+
+### 5.3 Syntaxe de base d’une description YAML Kubernetes
+Les description YAML permettent de décrire de façon lisible et manipulable de nombreuses caractéristiques des ressources Kubernetes (un peu comme un Compose file par rapport à la CLI Docker).
+
+Exemples:
+Création d’un service simple :
+
+```yaml
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+spec:
+  ports:
+    - port: 443
+      targetPort: 8443
+  selector:
+    k8s-app: kubernetes-dashboard
+  type: NodePort
+
+```
+
+Création d’un “compte utiliseur” ServiceAccount
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    k8s-app: kubernetes-dashboard
+  name: kubernetes-dashboard
+  namespace: kubernetes-dashboard
+```
+
+Remarques de syntaxe :
+
+- Toutes les descriptions doivent commencer par spécifier la version d’API (minimale) selon laquelle les objets sont censés être créés
+- Il faut également préciser le type d’objet avec kind
+- Le nom dans metadata:\n name: value est également obligatoire.
+- On rajoute généralement une description longue démarrant par spec:
+
+**Description de plusieurs ressources**
+On peut mettre plusieurs ressources à la suite dans un fichier k8s : cela permet de décrire une installation complexe en un seul fichier
+  - par exemple le dashboard Kubernetes https://github.com/kubernetes/dashboard/blob/master/aio/deploy/recommended.yaml
+
+L’ordre n’importe pas car les ressources sont décrites déclarativement c’est-à-dire que:
+- Les dépendances entre les ressources sont déclarées
+- Le control plane de Kubernetes se charge de planifier l’ordre correct de création en fonction des dépendances (pods avant le déploiement, rôle avec l’utilisateur lié au rôle)
+- On préfère cependant les mettre dans un ordre logique pour que les humains puissent les lire
+
+On peut sauter des lignes dans le YAML et rendre plus lisible les descriptions
+On sépare les différents objets par ---
+
+
+### 5.4 Objets de base
+
+#### 5.4.1 Les namespaces
+
+Tous les objets Kubernetes sont rangés dans différents espaces de travail isolés appelés **namespaces**.
+
+Cette isolation permet 3 choses :
+
+- ne voir que ce qui concerne une tâche particulière (ne réfléchir que sur une seule chose lorsqu’on opère sur un cluster)
+- créer des limites de ressources (CPU, RAM, etc.) pour le namespace
+- définir des rôles et permissions sur le namespace qui s’appliquent à toutes les ressources à l’intérieur.
+- Lorsqu’on lit ou créé des objets sans préciser le namespace, ces objets sont liés au namespace **default**.
+
+Pour utiliser un namespace autre que **default** avec **kubectl** il faut :
+
+le préciser avec l’option -n : **kubectl get pods -n kube-system**
+créer une nouvelle configuration dans la kubeconfig pour changer le namespace par defaut.
+Kubernetes gère lui-même ses composants internes sous forme de pods et services.
+
+- Si vous ne trouvez pas un objet, essayez de lancer la commande kubectl avec l’option **-**A ou **--all-namespaces**
+
+#### 5.4.2 Les Pods
+
+#### 5.4.3 Les ReplicaSet
+
+#### 5.4.4 Les Deployments
+
+#### 5.4.5 Les Services
+#### 5.4.5 Le stockage dans Kubernetes: StorageClasses
+#### 5.4.5 Le stockage dans Kubernetes: StatefulSets
+#### 5.4.5 Le stockage dans Kubernetes: DaemonSets
+#### 5.4.5 Le stockage dans Kubernetes: Les ConfigMaps
+#### 5.4.5 Le stockage dans Kubernetes: les Secrets
+#### 5.4.5 Le stockage dans Kubernetes: Les CRD et Operators
+
+
+
+## 6. Le réseau dans Kubernetes
+### 6.1 Les objets Services
+### 6.2 Les network policies
+### 6.3 Le loadbalancing
+### 6.4 Les objets Ingresses
+
+
+## 7. Helm, le gestionnaire de paquets Kubernetes
