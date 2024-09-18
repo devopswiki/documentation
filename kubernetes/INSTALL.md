@@ -39,9 +39,12 @@ Affichez à nouveau la version kubectl version. Cette fois-ci la version de kube
 Bash completion
 Pour permettre à kubectl de compléter le nom des commandes et ressources avec <Tab> il est utile d’installer l’autocomplétion pour Bash :
 
+```bash
 sudo apt install bash-completion
 source <(kubectl completion bash)
 echo "source <(kubectl completion bash)" >> ${HOME}/.bashrc
+```
+
 Vous pouvez désormais appuyer sur <Tab> pour compléter vos commandes kubectl, c’est très utile !
 
 
@@ -50,8 +53,12 @@ Vous pouvez désormais appuyer sur <Tab> pour compléter vos commandes kubectl, 
 Lens est une interface graphique sympatique pour Kubernetes.
 Elle se connecte en utilisant la configuration ~/.kube/config par défaut et nous permettra d’accéder à un dashboard bien plus agréable à utiliser.
 Vous pouvez l’installer en lançant ces commandes :
+```bash
 sudo apt-get update; sudo apt-get install -y libxss-dev
 curl -fSL https://github.com/lensapp/lens/releases/download/v4.0.6/Lens-4.0.6.AppImage -o ~/Lens.AppImage
 chmod +x ~/Lens.AppImage
 ~/Lens.AppImage &
+```
+
+
 
