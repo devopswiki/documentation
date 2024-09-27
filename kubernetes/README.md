@@ -505,3 +505,4 @@ template:
 
 https://supports.uptime-formation.fr/05-kubernetes/
 https://kubernetes.training.datailor.fr/
+https://learn.kodekloud.com

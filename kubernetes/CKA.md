@@ -25,6 +25,14 @@
     - [Decision Factors:](#decision-factors)
     - [Installation and Configuration:](#installation-and-configuration)
     - [Customization:](#customization)
+- [7. **Kubelet** in Kubernetes](#7-kubelet-in-kubernetes)
+    - [Key Functions:](#key-functions-1)
+    - [Installation and Configuration:](#installation-and-configuration-1)
+    - [Advanced Topics:](#advanced-topics)
+- [8. **Kube-Proxy** in Kubernetes](#8-kube-proxy-in-kubernetes)
+    - [Key Functions:](#key-functions-2)
+    - [How Kube-Proxy Works:](#how-kube-proxy-works)
+    - [Installation:](#installation)
 - [Some references:](#some-references)
 
 
@@ -213,8 +221,52 @@ The **Kube-Scheduler** is responsible for deciding which node will run a given p
 #### Customization:
 - Kubernetes allows for custom schedulers if the default one does not fit your needs. You can create and deploy your own scheduler to handle specific use cases or resource constraints.
 
-The **Kube-Scheduler** is essential for managing how resources are allocated across nodes, ensuring that pods are placed on nodes that can best handle their workload. Advanced topics like **taints and tolerations**, **affinity rules**, and **node selectors** are used to further customize how scheduling works in a Kubernetes cluster.
+The **Kube-Scheduler** is essential for managing how resources are allocated across nodes, ensuring that pods are placed on nodes that can best handle their workload. Advanced topics like **taints and tolerations**, **affinity rules**, and **node selectors** are 
+used to further customize how scheduling works in a Kubernetes cluster.
 
+
+## 7. **Kubelet** in Kubernetes
+
+The **kubelet** is the primary agent on a Kubernetes **worker node**, responsible for managing the state of the node and its pods. It acts as the point of contact between the **Kubernetes control plane** (master node) and the worker node.
+
+#### Key Functions:
+- **Node Registration**: The kubelet registers the node with the Kubernetes cluster.
+- **Pod Management**: When the kubelet receives instructions from the **scheduler** to run a pod, it interacts with the **container runtime engine** (like Docker) to pull the necessary container images and start the pod.
+- **Monitoring and Reporting**: The kubelet continuously monitors the status of the node and the containers running on it. It sends status reports to the **kube-apiserver** to ensure the cluster is functioning correctly.
+
+#### Installation and Configuration:
+- Unlike other components, **kubeadm** does not automatically install the **kubelet**. You must manually install the kubelet on each worker node.
+- To install, download the kubelet, extract it, and run it as a service.
+  
+- You can inspect the running kubelet process and view its options by listing the processes on the worker node and searching for "kubelet."
+
+#### Advanced Topics:
+- **Configuration**: The kubelet can be customized and configured with specific options.
+- **TLS Bootstrapping**: Securing communication with the Kubernetes cluster via **TLS certificates** is a crucial part of the kubelet’s setup, which will be covered later.
+
+The **kubelet** is essential for managing workloads on the worker nodes, ensuring containers are properly running and reporting their status back to the Kubernetes control plane.
+
+
+## 8. **Kube-Proxy** in Kubernetes
+
+The **kube-proxy** is a critical networking component in Kubernetes, enabling communication between pods and services within the cluster. It ensures that traffic intended for a service is forwarded to the appropriate pods.
+
+#### Key Functions:
+- **Pod Networking**: Each pod in Kubernetes can communicate with any other pod using an internal **virtual network**. This network spans all nodes, allowing for pod-to-pod communication.
+- **Service Discovery**: Pods communicate with other pods, such as a web app reaching a database pod, via IP addresses. However, pod IPs are not static. To solve this, Kubernetes introduces **services** to provide a stable IP or name for pods.
+- **Service IP Routing**: Services are virtual components that map traffic to backend pods. The **kube-proxy** manages the routing rules to forward traffic from a service IP to the actual pod IP.
+  
+#### How Kube-Proxy Works:
+- **Traffic Forwarding**: When a service is created, kube-proxy updates the network rules (e.g., using **iptables**) on each node to route traffic meant for the service IP to the backend pod's IP.
+- **Node-Based Deployment**: Kube-proxy runs as a **DaemonSet**, ensuring that one instance of the kube-proxy runs as a pod on each node in the cluster. This ensures every node can forward service-related traffic.
+
+#### Installation:
+- Kube-proxy can be installed by downloading its binary from the **Kubernetes release page**, extracting it, and running it as a service.
+- When using **kubeadm**, kube-proxy is automatically deployed as a DaemonSet.
+
+The **kube-proxy** plays a vital role in service discovery and traffic forwarding in Kubernetes, ensuring that services can be accessed by any pod across the cluster.
+
+---
 
 ## Some references:
 
