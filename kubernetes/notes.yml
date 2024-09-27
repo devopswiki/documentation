@@ -1,0 +1,138 @@
+kubctl get pods
+kubectl run nginx-pod --image=nginx --restart=Never
+or 
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+    ports:
+    - containerPort: 80
+
+
+
+
+
+kubectl apply -f nginx-pod.yaml
+
+
+kubectl describe pod nginx-pod
+
+determine which nodes your pods are running on : kubectl get pods -o wide
+
+
+How many containers are part of the pod webapp?
+
+kubectl describe pod webapp
+
+
+kubectl delete pod webapp
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: redis
+spec:
+  containers:
+  - name: redis-container
+    image: redis123
+    ports:
+    - containerPort: 80
+
+
+
+To check how many **ReplicaSets** exist in your Kubernetes cluster, you can use the following `kubectl` command:
+
+```bash
+kubectl get rs --all-namespaces
+```
+
+To find out how many pods are **desired** in a specific ReplicaSet (for example, `new-replica-set`), you can use the following `kubectl` command:
+
+```bash
+kubectl get rs new-replica-set -o=jsonpath='{.status.replicas}'
+```
+
+This will output the desired number of pods for the `new-replica-set`.
+
+Alternatively, you can use the `kubectl describe` command to see more details:
+
+```bash
+kubectl describe rs new-replica-set
+```
+
+Look for the line:
+
+```
+Replicas:  <desired>/<current>/<ready>
+```
+
+The first number in this line represents the desired number of pods.
+
+If you are managing multiple namespaces, don’t forget to specify the correct namespace if needed:
+
+```bash
+kubectl get rs new-replica-set -n <namespace> -o=jsonpath='{.status.replicas}'
+```
+
+
+
+
+To create a **ReplicaSet** from a YAML file in Kubernetes, follow these steps:
+
+1. **Write the ReplicaSet YAML file** (e.g., `replicaset.yml`). Here's an example YAML configuration for a ReplicaSet:
+
+   ```yaml
+   apiVersion: apps/v1
+   kind: ReplicaSet
+   metadata:
+     name: new-replica-set
+     labels:
+       app: myapp
+   spec:
+     replicas: 3
+     selector:
+       matchLabels:
+         app: myapp
+     template:
+       metadata:
+         labels:
+           app: myapp
+       spec:
+         containers:
+         - name: nginx
+           image: nginx:1.14.2
+           ports:
+           - containerPort: 80
+   ```
+
+   In this example:
+   - `replicas: 3` specifies that 3 pods are desired.
+   - The ReplicaSet will manage pods that use the `nginx` image.
+
+2. **Create the ReplicaSet using kubectl**:
+
+   After creating the YAML file, you can apply it to the cluster using the `kubectl apply` command:
+
+   ```bash
+   kubectl apply -f replicaset.yml
+   ```
+
+   This will create the ReplicaSet as specified in the file.
+
+3. **Verify the creation**:
+
+   You can verify that the ReplicaSet has been created and the pods are running:
+
+   ```bash
+   kubectl get rs
+   kubectl get pods
+   ```
+
+This will show the status of the ReplicaSet and the pods it manages.
