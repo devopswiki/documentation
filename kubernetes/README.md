@@ -290,10 +290,197 @@ Kubernetes gère lui-même ses composants internes sous forme de pods et service
 - Si vous ne trouvez pas un objet, essayez de lancer la commande kubectl avec l’option **-**A ou **--all-namespaces**
 
 #### 5.4.2 Les Pods
+Un Pod est l’unité d’exécution de base d’une application Kubernetes que vous créez ou déployez. Un Pod représente des process en cours d’exécution dans votre Cluster.
+
+Un Pod encapsule un conteneur (ou souvent plusieurs conteneurs), des ressources de stockage, **une IP réseau unique**, et des options qui contrôlent comment le ou les conteneurs doivent s’exécuter (ex: restart policy). Cette collection de conteneurs et volumes tournent dans le même environnement d’exécution mais les processus sont isolés.
+
+Un Pod représente une unité de déploiement : un petit nombre de conteneurs qui sont étroitement liés et qui partagent :
+
+- les mêmes ressources de calcul
+- des volumes communs
+- la même IP donc le même nom de domaine
+- peuvent se parler sur localhost
+- peuvent se parler en IPC
+- ont un nom différent et des logs différents
+
+Chaque Pod est destiné à exécuter une instance unique d’un workload donné. Si vous désirez mettre à l’échelle votre workload, vous devez multiplier le nombre de Pods avec un déploiement
+
+Kubernetes fournit un ensemble de commande pour débugger des conteneurs :
+
+```bash
+kubectl logs <pod-name> -c <conteneur_name> (le nom du conteneur est inutile si un seul)
+kubectl exec -it <pod-name> -c <conteneur_name> -- bash
+kubectl attach -it <pod-name>
+```
+
+Enfin, pour debugger la sortie réseau d’un programme on peut rapidement forwarder un port depuis un pods vers l’extérieur du cluster :
+
+```bash
+kubectl port-forward <pod-name> <port_interne>:<port_externe>
+# /!\ C’est une commande de debug seulement : pour exposer correctement des processus k8s, il faut créer un service, par exemple avec NodePort. /!\
+```
+
+Pour copier un fichier dans un pod on peut utiliser: 
+```bash
+kubectl cp <pod-name>:</path/to/remote/file> </path/to/local/file>
+```
+
+Pour monitorer rapidement les ressources consommées par un ensemble de processus il existe les commande 
+```bash
+kubectl top nodes 
+# et
+kubectl top pods
+```
+
+Un manifeste de Pod rancher-demo-pod.yaml
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rancher-demo-pod
+spec:
+  containers:
+    - image: monachus/rancher-demo:latest
+      name: rancher-demo-container
+      ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+    - image: redis
+      name: redis-container
+      ports:
+        - containerPort: 6379
+          name: http
+          protocol: TCP
+
+```
 
 #### 5.4.3 Les ReplicaSet
+#### Résumé
+Un **ReplicaSet** est un composant de Kubernetes utilisé pour garantir un nombre constant de pods en cours d'exécution dans un cluster. Il surveille l'état des pods et s'assure que le nombre spécifié de répliques est toujours disponible. Si un pod meurt ou échoue, le ReplicaSet en crée un nouveau pour maintenir le bon nombre de répliques.
 
-#### 5.4.4 Les Deployments
+
+Une des solutions de scaler votre Pod, nous utiliserons un objet Kubernetes, prévue à cet effet, soit les ReplicaSets.
+
+Dans notre modèle, les ReplicaSet servent à gérer et sont responsables pour:
+
+- la réplication (avoir le bon nombre d’instances et le scaling)
+- la santé et le redémarrage automatique des pods de l’application (Self-Healing)
+
+En général on ne les manipule pas directement (c’est déconseillé) même s’il est possible de les modifier et de les créer avec un fichier de ressource. Pour créer des groupes de conteneurs on utilise soit un Deployment soit d’autres formes de workloads (DaemonSet, StatefulSet, Job) adaptés à d’autres cas.
+
+
+#### Fonctionnement :
+- Il veille à ce que le nombre de répliques désiré soit exécuté à tout moment.
+- Il surveille les pods basés sur leurs **labels** et garantit que le bon nombre de pods portant ces labels soit en cours d’exécution.
+- Si un pod échoue, un nouveau est automatiquement créé pour compenser.
+
+#### Exemple d'utilisation :
+Voici un exemple d'un fichier YAML pour créer un ReplicaSet avec 3 répliques d'un pod Nginx.
+
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: nginx-replicaset
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+```
+
+Ce fichier définit un ReplicaSet qui s'assure que 3 pods exécutant l'image Nginx sont toujours en cours d'exécution.
+
+#### Commandes principales pour manipuler un ReplicaSet :
+
+1. **Créer un ReplicaSet** :
+   ```bash
+   kubectl apply -f replicaset.yaml
+   ```
+
+2. **Lister les ReplicaSets** :
+   ```bash
+   kubectl get rs
+   ```
+
+3. **Afficher les détails d'un ReplicaSet** :
+   ```bash
+   kubectl describe rs <nom-du-replicaset>
+   ```
+
+4. **Modifier un ReplicaSet** (par exemple, changer le nombre de répliques) :
+   ```bash
+   kubectl edit rs <nom-du-replicaset>
+   ```
+
+5. **Supprimer un ReplicaSet** :
+   ```bash
+   kubectl delete rs <nom-du-replicaset>
+   ```
+
+6. **Mettre à jour un ReplicaSet** (par exemple, en modifiant l'image) :
+   ```bash
+   kubectl set image rs <nom-du-replicaset> <container-name>=<new-image>
+   ```
+
+
+
+#### 5.4.4 Les Deployments (deploy)
+Les déploiements sont les objets effectivement créés manuellement lorsqu’on déploie une application. Ce sont des objets de plus haut niveau que les pods et replicaset et les pilote pour gérer un déploiement applicatif.
+![image info](./src/imgs/k8s_deploy_archi.png)
+
+Les poupées russes Kubernetes : un Deployment contient un ReplicaSet, qui contient des Pods, qui contiennent des conteneurs
+
+Si c’est nécessaire d’avoir ces trois types de ressources c’est parce que Kubernetes respecte un principe de découplage des responsabilités.
+
+La responsabilité d’un déploiement est de gérer la coexistence et le tracking de versions multiples d’une application et d’effectuer des montées de version automatiques en haute disponibilité en suivant une RolloutStrategy (CF. TP optionnel).
+
+Ainsi lors des changements de version, un seul deployment gère automatiquement deux replicasets contenant chacun une version de l’application : le découplage est nécessaire.
+
+Un deployment implique la création d’un ensemble de Pods désignés par une étiquette label et regroupé dans un Replicaset.
+
+  ```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+name: nginx-deployment
+labels:
+  app: nginx
+spec:
+replicas: 3
+strategy:
+  type: Recreate
+selector:
+  matchLabels:
+    app: nginx
+template:
+  metadata:
+    labels:
+      app: nginx
+  spec:
+    containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+          - containerPort: 80
+  ```
+
+
+
 
 #### 5.4.5 Les Services
 #### 5.4.5 Le stockage dans Kubernetes: StorageClasses
@@ -313,3 +500,8 @@ Kubernetes gère lui-même ses composants internes sous forme de pods et service
 
 
 ## 7. Helm, le gestionnaire de paquets Kubernetes
+
+# REF
+
+https://supports.uptime-formation.fr/05-kubernetes/
+https://kubernetes.training.datailor.fr/

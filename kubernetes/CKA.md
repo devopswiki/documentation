@@ -10,6 +10,21 @@
   - [Key Concepts](#key-concepts)
   - [Using etcd](#using-etcd)
   - [Why Use etcd?](#why-use-etcd)
+- [4. kube-apiserver](#4-kube-apiserver)
+  - [Resume: The **kube-apiserver** in Kubernetes](#resume-the-kube-apiserver-in-kubernetes)
+  - [Setup and Configuration:](#setup-and-configuration)
+- [5. Kube Controller Manager](#5-kube-controller-manager)
+  - [Résumé: **Kube Controller Manager** in Kubernetes](#résumé-kube-controller-manager-in-kubernetes)
+    - [Key Functions of Controllers:](#key-functions-of-controllers)
+    - [**Kube Controller Manager** Overview:](#kube-controller-manager-overview)
+    - [Configuration:](#configuration)
+    - [Viewing and Managing:](#viewing-and-managing)
+  - [6. **Kube-Scheduler**](#6-kube-scheduler)
+  - [Résumé: **Kube-Scheduler** in Kubernetes](#résumé-kube-scheduler-in-kubernetes)
+    - [Key Functions:](#key-functions)
+    - [Decision Factors:](#decision-factors)
+    - [Installation and Configuration:](#installation-and-configuration)
+    - [Customization:](#customization)
 - [Some references:](#some-references)
 
 
@@ -99,10 +114,6 @@ Etcd is a distributed, reliable, and fast **key-value store**. It is widely used
   3. Run ETCD Service
     ./etcd
 
-
-
-
-
 2. **etcdctl**: This is the command-line client to interact with etcd.
    - To set a key: `etcdctl set mykey "myvalue"`
    - To get a key: `etcdctl get mykey`
@@ -118,6 +129,91 @@ Etcd is a distributed, reliable, and fast **key-value store**. It is widely used
 
 **Next Steps**:
 In future lessons, you'll explore how to set up etcd in a high-availability environment, the RAFT consensus algorithm, and how it integrates with Kubernetes for managing cluster state.
+
+
+## 4. kube-apiserver
+
+### Resume: The **kube-apiserver** in Kubernetes
+
+Hello, and welcome to this lecture. In this lecture, we will discuss the **kube-apiserver**, the core management component in Kubernetes.
+
+When you run a `kubectl` command, it communicates with the **kube-apiserver**, which handles the following key tasks:
+1. **Authenticating and validating requests**.
+2. **Retrieving and updating data** from the **etcd** cluster, the main data store for the cluster.
+
+For example, when creating a pod:
+- The API server **authenticates and validates** the request.
+- It creates the **pod object** without assigning it to a node.
+- It updates **etcd** with the pod information.
+- The **scheduler** monitors the API server, detects the new pod, selects a node, and informs the API server.
+- The API server updates **etcd** with the node assignment and passes this information to the **kubelet** on the assigned node.
+- The **kubelet** then instructs the container runtime to deploy the pod and updates the API server once completed. The api server then updates the data in the etcd.
+
+In summary:
+- The **kube-apiserver** is central to all actions in the cluster, handling **authentication, validation**, and **interaction with etcd**.
+- Other components, such as the **scheduler**, **kube-controller-manager**, and **kubelet**, communicate with the cluster via the **kube-apiserver**.
+
+### Setup and Configuration:
+If you used **kubeadm** to bootstrap your cluster, the **kube-apiserver** runs as a pod in the **kube-system** namespace. The configuration is located in `/etc/kubernetes/manifests/kube-apiserver.yaml`. In non-kubeadm setups, you can find its configuration in `/etc/systemd/system/kube-apiserver.service`.
+
+The **kube-apiserver** is run with many options, including **certificates** for secure communication between components and the **etcd servers**' location. You can inspect these options by viewing the respective configuration files or listing the processes on the master node.
+
+## 5. Kube Controller Manager 
+### Résumé: **Kube Controller Manager** in Kubernetes
+
+The **Kube Controller Manager** manages various controllers in Kubernetes, each with specific responsibilities. Controllers are like departments that monitor the state of different components in the system and take actions to ensure the system operates as desired.
+
+#### Key Functions of Controllers:
+**Controllers** are processes that continuously monitor and adjust the state of the cluster. For example:
+  - The **Node Controller** monitors the health of nodes, checking their status every 5 seconds. If a node becomes unreachable (after 40 seconds), the Node Controller waits for 5 minutes before removing its pods and reallocating them to healthy nodes (if they belong to a ReplicaSet).
+  - The **Replication Controller** ensures that the desired number of pods are running within a ReplicaSet. If a pod dies, it creates another one.
+
+These are just two examples, but many controllers exist in Kubernetes, managing resources like **deployments, services, namespaces, and persistent volumes**.
+
+#### **Kube Controller Manager** Overview:
+- All controllers are packaged into a single process called the **Kube Controller Manager**. When installed, it automatically includes the various controllers.
+  
+- The **Kube Controller Manager** communicates with the **kube-apiserver** to ensure the cluster's state matches the desired state defined by the user.
+
+#### Configuration:
+- The **Kube Controller Manager** can be customized via various options, including settings like:
+  - **Node monitor period** (time interval for checking node status).
+  - **Grace period** (time before marking a node as unreachable).
+  - **Eviction timeout** (time before removing pods from an unreachable node).
+  
+- By default, all controllers are enabled, but you can specify which ones to activate via the `--controllers` option.
+
+#### Viewing and Managing:
+- If you set up your cluster using **kubeadm**, the **Kube Controller Manager** runs as a pod in the **kube-system** namespace, with configuration in `/etc/kubernetes/manifests/kube-controller-manager.yaml`.
+- In a non-kubeadm setup, the configuration is located in the `/etc/systemd/system/kube-controller-manager.service`.
+
+The **Kube Controller Manager** plays a crucial role in maintaining the health and consistency of the Kubernetes cluster by ensuring that resources like nodes and pods are always in the desired state.
+
+
+### 6. **Kube-Scheduler**
+### Résumé: **Kube-Scheduler** in Kubernetes
+
+The **Kube-Scheduler** is responsible for deciding which node will run a given pod in a Kubernetes cluster. However, the scheduler does not actually place the pod on the node—that is the job of the **kubelet**. The scheduler’s role is to determine the best node for each pod based on resource availability and other criteria.
+
+#### Key Functions:
+- The scheduler matches pods to nodes by analyzing the **resource requirements** of the pod (CPU, memory) and the **available capacity** on the nodes.
+- It operates in two phases:
+  1. **Filtering**: The scheduler eliminates nodes that don't meet the resource needs of the pod.
+  2. **Ranking**: The scheduler ranks the remaining nodes based on a priority function, which can include factors like how much free capacity a node will have after placing the pod. The node with the highest score is chosen.
+
+#### Decision Factors:
+- **Resource requirements** (e.g., CPU, memory).
+- **Node-specific configurations** like **node selectors**, **taints and tolerations**, and **affinity rules**.
+- After filtering nodes that do not meet the pod's requirements, the scheduler assigns a score to the remaining nodes to determine the best fit.
+
+#### Installation and Configuration:
+- If your cluster is set up using **kubeadm**, the **kube-scheduler** runs as a pod in the **kube-system** namespace on the master node, with configuration located in `/etc/kubernetes/manifests/kube-scheduler.yaml`.
+- In a non-kubeadm setup, the **kube-scheduler** runs as a service, and you can view the options in the configuration file located at `/etc/systemd/system/kube-scheduler.service`.
+
+#### Customization:
+- Kubernetes allows for custom schedulers if the default one does not fit your needs. You can create and deploy your own scheduler to handle specific use cases or resource constraints.
+
+The **Kube-Scheduler** is essential for managing how resources are allocated across nodes, ensuring that pods are placed on nodes that can best handle their workload. Advanced topics like **taints and tolerations**, **affinity rules**, and **node selectors** are used to further customize how scheduling works in a Kubernetes cluster.
 
 
 ## Some references:

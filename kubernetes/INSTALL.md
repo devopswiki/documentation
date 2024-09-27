@@ -5,7 +5,7 @@ Pour installer un cluster de développement :
   - avec Docker Desktop depuis peu (dans une VM aussi)
   - un cluster léger avec k3s, de Rancher
 
-Installer un cluster de production avec kubeadm
+Installer un cluster de production on premise : l’outil officiel kubeadm
 
 Installer un cluster de production Kubernetes à la main est nettement plus complexe que mettre en place un cluster Docker Swarm.
   - Installer le dæmon Kubelet sur tous les noeuds
@@ -25,6 +25,16 @@ Tous les principaux provider de cloud fournissent depuis plus ou moins longtemps
    - Google Cloud Plateform avec Google Kubernetes Engine (GKE) : très populaire car très flexible et l’implémentation de référence de Kubernetes.
    - AWS avec EKS : Kubernetes assez standard mais à la sauce Amazon pour la gestion de l’accès, des loadbalancers ou du scaling.
    - DigitalOcean ou Scaleway : un peu moins de fonctions mais plus simple à appréhender
+
+
+Kubespray
+https://kubespray.io/#/
+
+En réalité utiliser kubeadm directement en ligne de commande n’est pas la meilleure approche car cela ne respecte pas l’infrastructure as code et rend plus périlleux la maintenance/maj du cluster par la suite.
+
+Le projet kubespray est un installer de cluster kubernetes utilisant Ansible et kubeadm. C’est probablement l’une des méthodes les plus populaires pour véritablement gérer un cluster de production on premise.
+
+Mais la encore il s’agit de ne pas sous-estimer la complexité de la maintenance (comme avec kubeadm).
 
 ## Installer Minikube
 
