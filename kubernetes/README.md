@@ -145,7 +145,6 @@ Les nœuds maîtres dans un cluster Kubernetes exécutent les processus clés su
   - HAProxy : Le plus répandu en load balancing.
   - Traefik : Simple à configurer et se fond dans l’écosystème des conteneurs Docker et Kubernetes
   - NGINX : Serveur web central qui a depuis quelques années des fonctions puissantes de load balancing et TCP forwarding.
-
 ### 4.1.3 Healthchecks
 Fournir à l’application une façon d’indiquer qu’elle est disponible, c’est-à-dire :
 - qu’elle est démarrée (liveness)
@@ -153,7 +152,6 @@ Fournir à l’application une façon d’indiquer qu’elle est disponible, c�
 
 ![image info](./src/imgs/k8s_healthchecks_1.png)
 ![image info](./src/imgs/k8s_healthchecks_2.png)
-
 ### 4.1.4 Découverte de service (service discovery)
 Classiquement, les applications ne sont pas informées du contexte dans lequel elles tournent : la configuration doit être opérée de l’extérieur de l’application.
   - par exemple avec des fichiers de configuration fournie via des volumes
@@ -176,7 +174,6 @@ le DNS devient trop complexe à partir de quelques dizaines d’enregistrements
 **Solutions de découverte de service**
 - Consul (Hashicorp) : assez simple d’installation et fourni avec une sympathique interface web.
 - etcd : a prouvé ses performances à plus grande échelle mais un peu plus complexe
-
 ### 4.1.5 Les stratégies de déploiement
 SRC : https://blog.container-solutions.com/kubernetes-deployment-strategies
 
@@ -191,7 +188,56 @@ Mais il existe un panel de stratégies plus large pour updater ses apps :
   - pas possible par défaut avec Kubernetes, implique une infrastructure plus avancée avec reverse proxy (Istio, Traefik, nginx/haproxy personnalisé, etc.).
 
 ## 5. Objets Kubernetes
-### 5.1 L’API et les Objets Kubernetes
+### Introduction:
+![image info](./src/imgs/k8s_objets.png)
+En Kubernetes, un **workload** fait référence à une application ou un ensemble de processus déployés dans un cluster. Kubernetes offre plusieurs types de workloads pour répondre à différents types d'applications et de besoins de gestion. Voici les principaux types de workloads Kubernetes :
+
+1. **Pod**
+- **Description** : Le **Pod** est l’unité de base de déploiement dans Kubernetes. Il représente un ou plusieurs conteneurs qui partagent le même réseau et espace de stockage. Généralement, un Pod contient un seul conteneur.
+- **Usage** : Utilisé lorsque vous souhaitez exécuter une instance unique ou plusieurs conteneurs qui doivent cohabiter dans le même environnement réseau et de stockage.
+
+1. **Deployment**
+- **Description** : Le **Deployment** est le workload le plus courant pour les applications sans état (stateless). Il permet de gérer une réplique d’un ensemble de Pods de manière déclarative (scaling, mise à jour, rollback).
+- **Usage** : Pour les applications web ou microservices sans état nécessitant une mise à l’échelle et une gestion des versions. Le Deployment garantit que le nombre désiré de Pods est toujours en exécution.
+
+1. **StatefulSet**
+- **Description** : Le **StatefulSet** est utilisé pour déployer et gérer des applications avec état (stateful). Contrairement au Deployment, chaque Pod d’un StatefulSet est unique (chaque Pod a un identifiant stable) et conserve son stockage même après redémarrage.
+- **Usage** : Pour des bases de données, des systèmes distribués ou des applications où chaque instance doit conserver une identité unique (ex : MySQL, Cassandra).
+
+1. **DaemonSet**
+- **Description** : Un **DaemonSet** s’assure qu’un Pod spécifique est exécuté sur tous les nœuds (ou certains nœuds sélectionnés) du cluster.
+- **Usage** : Utilisé pour des tâches de monitoring, de logging, ou pour des composants de maintenance réseau qui doivent être déployés sur chaque nœud (ex : Fluentd, Collectd).
+
+1. **ReplicaSet**
+- **Description** : Un **ReplicaSet** garantit qu’un nombre spécifié de répliques d’un Pod sont exécutées en permanence.
+- **Usage** : Bien qu’il soit utilisé directement dans certains cas, le ReplicaSet est souvent géré implicitement par un Deployment pour maintenir le bon nombre de Pods en fonctionnement.
+
+1. **Job**
+- **Description** : Un **Job** est utilisé pour exécuter des tâches ponctuelles ou des tâches qui doivent s'exécuter une seule fois avec succès (batch jobs). Le Job garantit que le nombre spécifié de Pods termine la tâche avec succès.
+- **Usage** : Pour des traitements par lots, des tâches de nettoyage ponctuelles ou des scripts d’initiation.
+
+1. **CronJob**
+- **Description** : Un **CronJob** permet de planifier des Jobs à exécuter périodiquement ou à des moments précis (comme une tâche cron sur un système Unix).
+- **Usage** : Utilisé pour des tâches récurrentes comme des sauvegardes de base de données, des envois de rapports, ou d’autres tâches programmées.
+
+1. **Horizontal Pod Autoscaler (HPA)**
+- **Description** : Le **HPA** permet de faire évoluer dynamiquement (scale) le nombre de Pods d'un Deployment, ReplicaSet ou StatefulSet en fonction des métriques, comme l'utilisation du CPU ou de la mémoire.
+- **Usage** : Utilisé pour des applications nécessitant une montée en charge automatique selon la demande.
+
+1. **Vertical Pod Autoscaler (VPA)**
+- **Description** : Le **VPA** ajuste automatiquement les ressources CPU et mémoire d’un Pod en fonction de l’utilisation réelle.
+- **Usage** : Pour des applications où la charge de travail fluctue et où les ressources allouées au Pod doivent être adaptées dynamiquement.
+
+1.  **ReplicationController**
+- **Description** : **ReplicationController** est une version plus ancienne de ReplicaSet et remplit une fonction similaire en garantissant que le bon nombre de répliques d’un Pod est en cours d’exécution à tout moment.
+- **Usage** : ReplicaSet a remplacé ReplicationController, bien que certains clusters Kubernetes plus anciens puissent encore l'utiliser.
+
+1.  **Tâches Sidecar (Pattern Sidecar)**
+- **Description** : Bien que non directement un type de workload, le **Sidecar** est un pattern où un Pod héberge plusieurs conteneurs, l’un étant l'application principale et l’autre étant un conteneur d'accompagnement (sidecar) pour des tâches comme le logging, le monitoring, ou la mise à jour continue.
+- **Usage** : Utilisé pour ajouter des fonctionnalités auxiliaires à un Pod sans affecter le conteneur principal (ex : proxy de service, agrégateur de logs).
+
+Les différents types de workloads Kubernetes permettent d’adapter vos déploiements à des besoins variés, que ce soit pour des applications sans état, avec état, ou encore des tâches programmées et des services d’infrastructure.
+### L’API et les Objets Kubernetes
 Utiliser Kubernetes consiste à déclarer des objets grâce à l’API Kubernetes pour décrire l’état souhaité d’un cluster : quelles applications ou autres processus exécuter, quelles images elles utilisent, le nombre de replicas, les ressources réseau et disque que vous mettez à disposition, etc.
 
 On définit des objets généralement via l’interface en ligne de commande et **kubectl** de deux façons :
@@ -199,9 +245,7 @@ On définit des objets généralement via l’interface en ligne de commande et 
 - en décrivant un objet dans un fichier YAML ou JSON et en le passant au client **kubectl apply -f monpod.yml**
   
 Vous pouvez également écrire des programmes qui utilisent directement l’API Kubernetes pour interagir avec le cluster et définir ou modifier l’état souhaité. 
-
-### 5.2 La commande apply
-
+### La commande apply
 Kubernetes encourage le principe de l’infrastructure-as-code : il est recommandé d’utiliser une description YAML et versionnée des objets et configurations Kubernetes plutôt que la CLI.
 
 Pour cela la commande de base est **kubectl apply -f object.yaml**.
@@ -211,8 +255,7 @@ La commande inverse **kubectl delete -f object.yaml** permet de détruire un obj
 Lorsqu’on vient d’appliquer une description on peut l’afficher dans le terminal avec **kubectl apply -f myobj.yaml view-last-applied**
 
 Globalement Kubernetes garde un historique de toutes les transformations des objets : on peut explorer, par exemple avec la commande **kubectl rollout history deployment**.
-
-### 5.3 Syntaxe de base d’une description YAML Kubernetes
+### Syntaxe de base d’une description YAML Kubernetes
 Les description YAML permettent de décrire de façon lisible et manipulable de nombreuses caractéristiques des ressources Kubernetes (un peu comme un Compose file par rapport à la CLI Docker).
 
 Exemples:
@@ -266,16 +309,9 @@ L’ordre n’importe pas car les ressources sont décrites déclarativement c�
 
 On peut sauter des lignes dans le YAML et rendre plus lisible les descriptions
 On sépare les différents objets par ---
-
-
-### 5.4 Objets de base
-
-#### 5.4.1 Les namespaces
-
+### 5.1 Les namespaces
 Tous les objets Kubernetes sont rangés dans différents espaces de travail isolés appelés **namespaces**.
-
 Cette isolation permet 3 choses :
-
 - ne voir que ce qui concerne une tâche particulière (ne réfléchir que sur une seule chose lorsqu’on opère sur un cluster)
 - créer des limites de ressources (CPU, RAM, etc.) pour le namespace
 - définir des rôles et permissions sur le namespace qui s’appliquent à toutes les ressources à l’intérieur.
@@ -288,8 +324,7 @@ créer une nouvelle configuration dans la kubeconfig pour changer le namespace p
 Kubernetes gère lui-même ses composants internes sous forme de pods et services.
 
 - Si vous ne trouvez pas un objet, essayez de lancer la commande kubectl avec l’option **-**A ou **--all-namespaces**
-
-#### 5.4.2 Les Pods
+### 5.2 Les Pods
 Un Pod est l’unité d’exécution de base d’une application Kubernetes que vous créez ou déployez. Un Pod représente des process en cours d’exécution dans votre Cluster.
 
 Un Pod encapsule un conteneur (ou souvent plusieurs conteneurs), des ressources de stockage, **une IP réseau unique**, et des options qui contrôlent comment le ou les conteneurs doivent s’exécuter (ex: restart policy). Cette collection de conteneurs et volumes tournent dans le même environnement d’exécution mais les processus sont isolés.
@@ -355,9 +390,7 @@ spec:
           protocol: TCP
 
 ```
-
-#### 5.4.3 Les ReplicaSet
-#### Résumé
+### 5.3 Les ReplicaSet
 Un **ReplicaSet** est un composant de Kubernetes utilisé pour garantir un nombre constant de pods en cours d'exécution dans un cluster. Il surveille l'état des pods et s'assure que le nombre spécifié de répliques est toujours disponible. Si un pod meurt ou échoue, le ReplicaSet en crée un nouveau pour maintenir le bon nombre de répliques.
 
 
@@ -371,12 +404,12 @@ Dans notre modèle, les ReplicaSet servent à gérer et sont responsables pour:
 En général on ne les manipule pas directement (c’est déconseillé) même s’il est possible de les modifier et de les créer avec un fichier de ressource. Pour créer des groupes de conteneurs on utilise soit un Deployment soit d’autres formes de workloads (DaemonSet, StatefulSet, Job) adaptés à d’autres cas.
 
 
-#### Fonctionnement :
+Fonctionnement :
 - Il veille à ce que le nombre de répliques désiré soit exécuté à tout moment.
 - Il surveille les pods basés sur leurs **labels** et garantit que le bon nombre de pods portant ces labels soit en cours d’exécution.
 - Si un pod échoue, un nouveau est automatiquement créé pour compenser.
 
-#### Exemple d'utilisation :
+Exemple d'utilisation :
 Voici un exemple d'un fichier YAML pour créer un ReplicaSet avec 3 répliques d'un pod Nginx.
 
 ```yaml
@@ -405,7 +438,7 @@ spec:
 
 Ce fichier définit un ReplicaSet qui s'assure que 3 pods exécutant l'image Nginx sont toujours en cours d'exécution.
 
-#### Commandes principales pour manipuler un ReplicaSet :
+Commandes principales pour manipuler un ReplicaSet :
 
 1. **Créer un ReplicaSet** :
    ```bash
@@ -436,10 +469,7 @@ Ce fichier définit un ReplicaSet qui s'assure que 3 pods exécutant l'image Ngi
    ```bash
    kubectl set image rs <nom-du-replicaset> <container-name>=<new-image>
    ```
-
-
-
-#### 5.4.4 Les Deployments (deploy)
+### 5.4 Les Deployments (deploy)
 Les déploiements sont les objets effectivement créés manuellement lorsqu’on déploie une application. Ce sont des objets de plus haut niveau que les pods et replicaset et les pilote pour gérer un déploiement applicatif.
 ![image info](./src/imgs/k8s_deploy_archi.png)
 
@@ -478,31 +508,114 @@ template:
         ports:
           - containerPort: 80
   ```
+### 5.5 Les Services
+
+Dans Kubernetes, un service est un objet qui :
+
+- Désigne un ensemble de pods (grâce à des tags) généralement géré par un déploiement
+- Fournit un endpoint réseau pour les requêtes à destination de ces pods.
+- Configure une politique permettant d’y accéder depuis l’intérieur ou l’extérieur du cluster.
+
+L’ensemble des pods ciblés par un service est déterminé par un selector.
+
+Par exemple, considérons un backend de traitement d’image (stateless, c’est-à-dire ici sans base de données) qui s’exécute avec 3 replicas. Ces replicas sont interchangeables et les frontends ne se soucient pas du backend qu’ils utilisent. Bien que les pods réels qui composent l’ensemble backend puissent changer, les clients frontends ne devraient pas avoir besoin de le savoir, pas plus qu’ils ne doivent suivre eux-mêmes l’état de l’ensemble des backends.
+
+L’abstraction du service permet ce découplage : les clients frontend s’addressent à une seule IP avec un seul port dès qu’ils ont besoin d’avoir recours à un backend. Les backends vont recevoir la requête du frontend aléatoirement.
+
+Les Services sont de trois types principaux :
+
+- ClusterIP: expose le service sur une IP interne au cluster. Les autres pods peuvent alors accéder au service de l’intérieur du cluster, mais il n’est pas l’extérieur.
+- NodePort: expose le service depuis l’IP de chacun des noeuds du cluster en ouvrant un port directement sur le nœud, entre 30000 et 32767. Cela permet d’accéder aux pods internes répliqués. Comme l’IP est stable on peut faire pointer un DNS ou Loadbalancer classique dessus.
+- LoadBalancer: expose le service en externe à l’aide d’un Loadbalancer de fournisseur de cloud. Les services NodePort et ClusterIP, vers lesquels le Loadbalancer est dirigé sont automatiquement créés.
+
+![image info](./src/imgs/k8s_services_types.png){ width=90%, height=30% }
+### 5.6 Le stockage dans Kubernetes
+#### 5.6.1 StorageClasses
+Le stockage dans Kubernetes est fourni à travers des types de stockage appelés StorageClasses :
+
+- dans le cloud, ce sont les différentes offres du fournisseur,
+- dans un cluster auto-hébergé c’est par exemple :
+  - un disque dur local ou distant (NFS)
+  - ou bien une solution de stockage distribué
+    - les plus connues sont Ceph et GlusterFS
+
+**PersistentVolumeClaims et PersistentVolumes**
+Quand un conteneur a besoin d’un volume, il crée une PersistentVolumeClaim : une demande de volume (persistant). Si un des objets StorageClass est en capacité de le fournir, alors un PersistentVolume est créé et lié à ce conteneur : il devient disponible en tant que volume monté dans le conteneur.
+
+- les StorageClasses fournissent du stockage
+- les conteneurs demandent du volume avec les PersistentVolumeClaims
+- les StorageClasses répondent aux PersistentVolumeClaims en créant des objets PersistentVolumes : le conteneur peut accéder à son volume.
+
+#### 5.6.2 StatefulSets
+On utilise les **Statefulsets** pour répliquer un ensemble de pods dont l’état est important : par exemple, des pods dont le rôle est d’être une base de données, manipulant des données sur un disque.
+
+Un objet StatefulSet représente un ensemble de pods dotés d’identités uniques et de noms d’hôtes stables. Quand on supprime un StatefulSet, par défaut les volumes liés ne sont pas supprimés.
+
+Les StatefulSets utilisent un nom en commun suivi de numéros qui se suivent. Par exemple, un StatefulSet nommé web comporte des pods nommés web-0, web-1 et web-2. Par défaut, les pods StatefulSet sont déployés dans l’ordre et arrêtés dans l’ordre inverse (web-2, web-1 puis web-0).
+
+En général, on utilise des StatefulSets quand on veut :
+
+- des identifiants réseau stables et uniques
+- du stockage stable et persistant
+- des déploiements et du scaling contrôlés et dans un ordre défini
+- des rolling updates dans un ordre défini et automatisées
+
+#### 5.6.3 DaemonSets
+Une autre raison de répliquer un ensemble de Pods est de programmer un seul Pod sur chaque nœud du cluster. En général, la motivation pour répliquer un Pod sur chaque nœud est de faire atterrir une sorte d’agent ou de démon sur chaque nœud, et l’objet Kubernetes pour y parvenir est le DaemonSet. Par exemple pour des besoins de monitoring, ou pour configurer le réseau sur chacun des nœuds.
+
+Étant donné les similitudes entre les DaemonSets, les StatefulSets et les Deployments, il est important de comprendre quand les utiliser.
+
+**Deployments, DaemonSets, StatefulSets**
+- Les Deployments (liés à des ReplicaSets) doivent être utilisés :
+  - lorsque votre application est complètement découplée du nœud
+  - que vous pouvez en exécuter plusieurs copies sur un nœud donné sans considération particulière
+  - que l’ordre de création des replicas et le nom des pods n’est pas important
+  - lorsqu’on fait des opérations stateless
+- Les DaemonSets doivent être utilisés :
+  - lorsqu’au moins une copie de votre application doit être exécutée sur tous les nœuds du cluster (ou sur un sous-ensemble de ces nœuds).
+- Les StatefulSets doivent être utilisés :
+  - lorsque l’ordre de création des replicas et le nom des pods est important
+  - lorsqu’on fait des opérations stateful (écrire dans une base de données)
+
+#### 5.6.4 Les ConfigMaps
+D’après les recommandations de développement 12factor, la configuration de nos programmes doit venir de l’environnement. L’environnement est ici Kubernetes.
+
+Les objets ConfigMaps permettent d’injecter dans des pods des fichiers de configuration en tant que volumes.
 
 
+#### 5.6.5 les Secrets
+Les Secrets se manipulent comme des objets ConfigMaps, mais sont faits pour stocker des mots de passe, des clés privées, des certificats, des tokens, ou tout autre élément de config dont la confidentialité doit être préservée. Un secret se créé avec l’API Kubernetes, puis c’est au pod de demander à y avoir accès.
 
+Il y a 3 façons de donner un accès à un secret :
 
-#### 5.4.5 Les Services
-#### 5.4.5 Le stockage dans Kubernetes: StorageClasses
-#### 5.4.5 Le stockage dans Kubernetes: StatefulSets
-#### 5.4.5 Le stockage dans Kubernetes: DaemonSets
-#### 5.4.5 Le stockage dans Kubernetes: Les ConfigMaps
-#### 5.4.5 Le stockage dans Kubernetes: les Secrets
-#### 5.4.5 Le stockage dans Kubernetes: Les CRD et Operators
+- le secret est un fichier que l’on monte en tant que volume dans un conteneur (pas nécessairement disponible à l’ensemble du pod). Il est possible de ne jamais écrire ce secret sur le disque (volume tmpfs).
+- le secret est une variable d’environnement du conteneur.
+- cas spécifique aux registres : le secret est récupéré par kubelet quand il pull une image.
 
+Pour définir qui et quelle app a accès à quel secret, on utilise les fonctionnalités dites “RBAC” de Kubernetes
+#### 5.6.6 Les CRD et Operators
+Les CustomResourcesDefinition sont l’objet le plus méta de Kubernetes : inventés par Red Hat pour ses Operators, ils permettent de définir un nouveau type d’objet dans Kubernetes. Combinés à des Operators (du code d’API en Go), ils permettent d’étendre Kubernetes pour gérer de nouveaux objets qui eux-même interagissent avec des objets Kubernetes.
 
+Exemples :
 
-## 6. Le réseau dans Kubernetes
-### 6.1 Les objets Services
-### 6.2 Les network policies
-### 6.3 Le loadbalancing
-### 6.4 Les objets Ingresses
+- la chart officielle de la suite Elastic (ELK) définit des objets de type elasticsearch
+- KubeVirt permet de rajouter des objets de type VM pour les piloter depuis Kubernetes
+- Azure propose des objets correspondant à ses ressources du cloud Azure, pour pouvoir créer et paramétrer des ressources Azure directement via la logique de Kubernetes
 
+#### Jobs
+#### CronJobs
+#### Le Role-Based Access Control, les Roles et les RoleBindings
 
-## 7. Helm, le gestionnaire de paquets Kubernetes
+### 5.7 Le réseau dans Kubernetes
+#### 5.7.1 Les objets Services
+#### 5.7.2 Les network policies
+#### 5.7.3 Le loadbalancing
+#### 5.7.4 Les objets Ingresses
+## 6. Helm, le gestionnaire de paquets Kubernetes
 
 # REF
-
+https://cours.hadrienpelissier.fr/03-kubernetes/
 https://supports.uptime-formation.fr/05-kubernetes/
 https://kubernetes.training.datailor.fr/
 https://learn.kodekloud.com
+https://blog.stephane-robert.info/docs/conteneurs/orchestrateurs/kubernetes/introduction/
