@@ -2,42 +2,118 @@
 
 - [Table of contents](#table-of-contents)
 - [1. Introduction](#1-introduction)
-- [2. L’écosystème Kubernetes](#2-lécosystème-kubernetes)
-- [3. Architecture de Kubernetes](#3-architecture-de-kubernetes)
-  - [3.1 Worker Node In K8s Cluster:](#31-worker-node-in-k8s-cluster)
-  - [3.2 Master Node in K8s cluster:](#32-master-node-in-k8s-cluster)
-- [4. Concepts de Kubernetes](#4-concepts-de-kubernetes)
-- [4.1 Principes d’orchestration](#41-principes-dorchestration)
-  - [4.1.1 Haute disponibilité](#411-haute-disponibilité)
-  - [4.1.2 Répartition de charge (load balancing)](#412-répartition-de-charge-load-balancing)
-  - [4.1.3 Healthchecks](#413-healthchecks)
-  - [4.1.4 Découverte de service (service discovery)](#414-découverte-de-service-service-discovery)
-  - [4.1.5 Les stratégies de déploiement](#415-les-stratégies-de-déploiement)
-- [5. Objets Kubernetes](#5-objets-kubernetes)
-  - [5.1 L’API et les Objets Kubernetes](#51-lapi-et-les-objets-kubernetes)
-  - [5.2 La commande apply](#52-la-commande-apply)
-  - [5.3 Syntaxe de base d’une description YAML Kubernetes](#53-syntaxe-de-base-dune-description-yaml-kubernetes)
-  - [5.4 Objets de base](#54-objets-de-base)
-    - [5.4.1 Les namespaces](#541-les-namespaces)
-    - [5.4.2 Les Pods](#542-les-pods)
-    - [5.4.3 Les ReplicaSet](#543-les-replicaset)
-    - [5.4.4 Les Deployments](#544-les-deployments)
-    - [5.4.5 Les Services](#545-les-services)
-    - [5.4.5 Le stockage dans Kubernetes: StorageClasses](#545-le-stockage-dans-kubernetes-storageclasses)
-    - [5.4.5 Le stockage dans Kubernetes: StatefulSets](#545-le-stockage-dans-kubernetes-statefulsets)
-    - [5.4.5 Le stockage dans Kubernetes: DaemonSets](#545-le-stockage-dans-kubernetes-daemonsets)
-    - [5.4.5 Le stockage dans Kubernetes: Les ConfigMaps](#545-le-stockage-dans-kubernetes-les-configmaps)
-    - [5.4.5 Le stockage dans Kubernetes: les Secrets](#545-le-stockage-dans-kubernetes-les-secrets)
-    - [5.4.5 Le stockage dans Kubernetes: Les CRD et Operators](#545-le-stockage-dans-kubernetes-les-crd-et-operators)
-- [6. Le réseau dans Kubernetes](#6-le-réseau-dans-kubernetes)
-  - [6.1 Les objets Services](#61-les-objets-services)
-  - [6.2 Les network policies](#62-les-network-policies)
-  - [6.3 Le loadbalancing](#63-le-loadbalancing)
-  - [6.4 Les objets Ingresses](#64-les-objets-ingresses)
-- [7. Helm, le gestionnaire de paquets Kubernetes](#7-helm-le-gestionnaire-de-paquets-kubernetes)
+  - [**Concepts de Kubernetes** :](#concepts-de-kubernetes-)
+    - [Haute disponibilité](#haute-disponibilité)
+    - [Répartition de charge (load balancing)](#répartition-de-charge-load-balancing)
+    - [Healthchecks](#healthchecks)
+    - [Découverte de service (service discovery)](#découverte-de-service-service-discovery)
+    - [Les stratégies de déploiement](#les-stratégies-de-déploiement)
+  - [**L’écosystème Kubernetes** :](#lécosystème-kubernetes-)
+- [2. Architecture de Kubernetes:](#2-architecture-de-kubernetes)
+  - [**1. Worker Nodes (Cargo Ships):**](#1-worker-nodes-cargo-ships)
+  - [**2. Master Node (Control Ships):**](#2-master-node-control-ships)
+  - [ETCD](#etcd)
+    - [Key Concepts](#key-concepts)
+    - [Using etcd](#using-etcd)
+    - [Why Use etcd?](#why-use-etcd)
+  - [kube-apiserver](#kube-apiserver)
+  - [Kube Controller Manager](#kube-controller-manager)
+    - [Key Functions of Controllers:](#key-functions-of-controllers)
+    - [**Kube Controller Manager** Overview:](#kube-controller-manager-overview)
+    - [Configuration:](#configuration)
+    - [Viewing and Managing:](#viewing-and-managing)
+  - [Kube-Scheduler](#kube-scheduler)
+    - [Key Functions:](#key-functions)
+    - [Decision Factors:](#decision-factors)
+    - [Installation and Configuration:](#installation-and-configuration)
+    - [Customization:](#customization)
+  - [Kubelet](#kubelet)
+    - [Key Functions:](#key-functions-1)
+    - [Installation and Configuration:](#installation-and-configuration-1)
+    - [Advanced Topics:](#advanced-topics)
+  - [Kube-Proxy](#kube-proxy)
+    - [Key Functions:](#key-functions-2)
+    - [How Kube-Proxy Works:](#how-kube-proxy-works)
+    - [Installation:](#installation)
+- [3. Objets Kubernetes](#3-objets-kubernetes)
+  - [L’API et les Objets Kubernetes](#lapi-et-les-objets-kubernetes)
+  - [La commande apply](#la-commande-apply)
+  - [Syntaxe de base d’une description YAML Kubernetes](#syntaxe-de-base-dune-description-yaml-kubernetes)
+  - [3.1 Les namespaces](#31-les-namespaces)
+  - [3.2 Les Pods](#32-les-pods)
+    - [Key Concepts of Pods:](#key-concepts-of-pods)
+    - [Containers \& Pods in a Non-Kubernetes Environment:](#containers--pods-in-a-non-kubernetes-environment)
+    - [Basic Pod Operations:](#basic-pod-operations)
+    - [Kubernetes Pods with YAML:](#kubernetes-pods-with-yaml)
+      - [Key Components of a Kubernetes YAML File:](#key-components-of-a-kubernetes-yaml-file)
+      - [Example YAML File to Create a Pod:](#example-yaml-file-to-create-a-pod)
+      - [Creating the Pod:](#creating-the-pod)
+      - [Verifying the Pod:](#verifying-the-pod)
+  - [3.3 Les ReplicaSet](#33-les-replicaset)
+    - [Kubernetes Controllers: Replication Controller \& Replica Set](#kubernetes-controllers-replication-controller--replica-set)
+      - [1. **Replication Controller**](#1-replication-controller)
+      - [2. **Replica Set**](#2-replica-set)
+        - [YAML Structure for Replication Controller \& Replica Set](#yaml-structure-for-replication-controller--replica-set)
+        - [Replication Controller YAML Example:](#replication-controller-yaml-example)
+        - [Replica Set YAML Example:](#replica-set-yaml-example)
+        - [Differences:](#differences)
+      - [Commands](#commands)
+      - [Key Concepts:](#key-concepts-1)
+  - [3.4 Les Deployments (deploy)](#34-les-deployments-deploy)
+    - [Key Features of Kubernetes Deployments:](#key-features-of-kubernetes-deployments)
+    - [Deployments vs. ReplicaSets](#deployments-vs-replicasets)
+    - [YAML Example for Deployment:](#yaml-example-for-deployment)
+    - [Key Sections:](#key-sections)
+    - [Commands:](#commands-1)
+    - [Key `kubectl` Commands for Creating Pods, Deployments, and YAML Files:](#key-kubectl-commands-for-creating-pods-deployments-and-yaml-files)
+    - [1. **Create an NGINX Pod:**](#1-create-an-nginx-pod)
+    - [2. **Generate a Pod YAML File (without creating the pod):**](#2-generate-a-pod-yaml-file-without-creating-the-pod)
+    - [3. **Create a Deployment:**](#3-create-a-deployment)
+    - [4. **Generate a Deployment YAML File (without creating the deployment):**](#4-generate-a-deployment-yaml-file-without-creating-the-deployment)
+    - [5. **Generate and Save a Deployment YAML File:**](#5-generate-and-save-a-deployment-yaml-file)
+    - [6. **Modify the YAML File (e.g., change replicas) and Apply It:**](#6-modify-the-yaml-file-eg-change-replicas-and-apply-it)
+    - [7. **Create a Deployment with Specific Number of Replicas (in Kubernetes 1.19+):**](#7-create-a-deployment-with-specific-number-of-replicas-in-kubernetes-119)
+    - [Benefits of Using `kubectl` Commands Instead of YAML:](#benefits-of-using-kubectl-commands-instead-of-yaml)
+    - [Summary:](#summary)
+  - [3.5 Les Services](#35-les-services)
+    - [**Kubernetes Services Overview**](#kubernetes-services-overview)
+    - [**Networking in Kubernetes**](#networking-in-kubernetes)
+    - [**Types of Kubernetes Services**](#types-of-kubernetes-services)
+    - [**NodePort Service in Detail**](#nodeport-service-in-detail)
+    - [**Creating a NodePort Service**](#creating-a-nodeport-service)
+    - [**Connecting Services to Pods**](#connecting-services-to-pods)
+    - [**Load Balancing and High Availability**](#load-balancing-and-high-availability)
+    - [**Service Flexibility and Adaptation**](#service-flexibility-and-adaptation)
+    - [3.6.5 les Secrets](#365-les-secrets)
+    - [3.6.6 Les CRD et Operators](#366-les-crd-et-operators)
+    - [Jobs](#jobs)
+    - [CronJobs](#cronjobs)
+    - [Le Role-Based Access Control, les Roles et les RoleBindings](#le-role-based-access-control-les-roles-et-les-rolebindings)
+- [4. Le stockage dans Kubernetes](#4-le-stockage-dans-kubernetes)
+  - [4.1 StorageClasses](#41-storageclasses)
+  - [4.2 StatefulSets](#42-statefulsets)
+  - [4.3 DaemonSets](#43-daemonsets)
+  - [4.4 Les ConfigMaps](#44-les-configmaps)
+- [5 Le réseau dans Kubernetes](#5-le-réseau-dans-kubernetes)
+  - [5.1 Les objets Services](#51-les-objets-services)
+  - [5.2 Les network policies](#52-les-network-policies)
+  - [5.3 Le loadbalancing](#53-le-loadbalancing)
+  - [5.4 Les objets Ingresses](#54-les-objets-ingresses)
+- [6. Sécurité dans Kubernetes](#6-sécurité-dans-kubernetes)
+  - [6.1 Concepts de base de la sécurité](#61-concepts-de-base-de-la-sécurité)
+  - [6.2 Authentification et autorisation](#62-authentification-et-autorisation)
+  - [6.3 Secrets et ConfigMaps](#63-secrets-et-configmaps)
+  - [6.4 Network Policies](#64-network-policies)
+  - [6.5 RBAC (Role-Based Access Control)](#65-rbac-role-based-access-control)
+- [7. Gestion de la configuration et des versions](#7-gestion-de-la-configuration-et-des-versions)
+  - [7.1 Helm et gestion des packages](#71-helm-et-gestion-des-packages)
+  - [7.2 GitOps et déploiement continu](#72-gitops-et-déploiement-continu)
+- [8. Surveillance et Journalisation](#8-surveillance-et-journalisation)
+- [9. Kubernetes dans le Cloud](#9-kubernetes-dans-le-cloud)
+- [REF](#ref)
+
 
 ## 1. Introduction
-
 Kubernetes, souvent abrégé en K8s, est un outil d'orchestration de conteneurs open source, initialement développé par Google. Il permet de gérer des applications conteneurisées, comme celles basées sur Docker, dans différents environnements de déploiement tels que des machines physiques, des machines virtuelles, le cloud ou des environnements hybrides. 
 
 **Problèmes résolus par Kubernetes** :
@@ -48,71 +124,8 @@ Avec la transition des architectures monolithiques vers les microservices et l'u
 - **Évolutivité** (Scalability or high performance) : permet d'ajuster rapidement la capacité de l'application en fonction de la demande.(scale your applications fast when you have more load on it ans more users are trying to access it and the same way you can easily scale it down when the load goes down)
 - **Récupération** : assure des mécanismes de sauvegarde et de restauration des données en cas de problème infrastructurel.
 
-## 2. L’écosystème Kubernetes
-
-L'écosystème Kubernetes est constitué d'une variété de flavours qui implémentent les standards définis par Kubernetes, notamment pour les solutions réseau, le stockage, le loadbalancing, l'Ingress, l'autoscaling de clusters et le monitoring. Bien qu'il soit possible de créer un cluster Kubernetes personnalisé, cela demande une expertise technique et des choix complexes, ce qui pousse souvent les utilisateurs vers des solutions de fournisseurs de cloud, entraînant un vendor lock-in.
-
-Voici quelques exemples d'écosystèmes Kubernetes populaires :
-- **Google Kubernetes Engine (GKE)** : L’écosystème Kubernetes développé par Google. Très populaire car très flexible tout en étant l’implémentation de référence de Kubernetes.
-- **Azure Kubernetes Services (AKS)** : Un écosystème Kubernetes axé sur l’intégration avec les services du cloud Azure (stockage, registry, réseau, monitoring, services de calcul, loadbalancing, bases de données…).
-- **Elastic Kubernetes Services (EKS)** : Un écosystème Kubernetes assez standard à la sauce Amazon axé sur l’intégration avec le cloud Amazon (la gestion de l’accès, des loadbalancers ou du scaling notamment, le stockage avec Amazon EBS, etc.)
-- **Rancher** : Un écosystème Kubernetes très complet, assez opinionated et entièrement open-source, non lié à un fournisseur de cloud. Inclut l’installation de stack de monitoring (Prometheus), de logging, de réseau mesh (Istio) via une interface web agréable. Rancher maintient aussi de nombreuses solutions open source, comme par exemple Longhorn pour le stockage distribué.
-- **k3s** : Un écosystème Kubernetes fait par l’entreprise Rancher et axé sur la légèreté. Il remplace etcd par une base de données Postgres, utilise Traefik pour l’ingress et Klipper pour le loadbalancing.
-- **Openshift** : Une version de Kubernetes configurée et optimisée par Red Hat pour être utilisée dans son écosystème. Tout est intégré donc plus guidé, avec l’inconvénient d’être un peu captif·ve de l’écosystème et des services vendus par Red Hat.
-  
-![image info](./src/imgs/k8s_archi_basic.png)
-
-## 3. Architecture de Kubernetes
-
-Kubernetes adopte une architecture **master/worker**, où un cluster Kubernetes est composé d'au moins un nœud maître (master node) et de plusieurs nœuds de travail (worker nodes), également appelés simplement "nœuds". Ces nœuds peuvent être des machines physiques ou virtuelles; vous interagirez rarement directement avec les nœuds.
-
-- **Nœud maître** : il orchestre l'ensemble du cluster. Il gère la planification des applications, la distribution des ressources et assure la communication entre les nœuds de travail.
-    Le “master” fait référence à un ensemble de processus gérant l’état du cluster. Le master peut également être répliqué pour la disponibilité et la redondance.
-- **Nœuds de travail** : ce sont les machines sur lesquelles les conteneurs d'applications s'exécutent. Chaque nœud de travail est sous la supervision du nœud maître et héberge des pods qui contiennent les conteneurs.
-  
-Cette architecture permet une gestion flexible et évolutive des applications, avec une séparation claire des rôles entre la gestion du cluster (nœud maître) et l'exécution des tâches (nœuds de travail).
-
-
-### 3.1 Worker Node In K8s Cluster:
-
-![image info](./src/imgs/k8s_worker_node.png)
-
-En tant que développeur ou administrateur Kubernetes, vous interagirez principalement avec les nœuds de travail (worker nodes) pour déployer, mettre à jour ou autoscaler vos applications conteneurisées. Un nœud de travail exécute le travail réel du cluster et contient des pods, qui sont des abstractions de vos applications conteneurisées.
-
-Chaque nœud de travail exécute trois processus clés :
-1. **Container Runtime** : C'est l'environnement dans lequel les conteneurs sont exécutés. Exemples : containerd, CRI-O, Docker.
-2. **kubelet** : Le kubelet est un agent principal qui s'exécute sur chaque nœud de travail. Il interagit à la fois avec le nœud et les conteneurs sur ce nœud. Il a plusieurs responsabilités clés :
-   - **Gestion des Pods** : Il maintient un ensemble de pods (composés de un ou plusieurs conteneurs) sur le système local du nœud.
-   - **Enregistrement et Rapport** : Il enregistre le nœud auprès du cluster Kubernetes, envoie des événements, des états des pods, et rapporte l'utilisation des ressources.
-   - **Observation des PodSpecs** : Le kubelet surveille les PodSpecs (descriptions de pods en YAML ou JSON) via l'API Kubernetes et veille à ce que les conteneurs décrits dans ces PodSpecs soient en cours d'exécution et en bonne santé.
-   - Lorsque Kubernetes veut planifer un pod, il envoie des PodSecs du pod au Kubelet. Le kubelet s’assure alors que les conteneurs sont sains et son conforme à la configuration déclarative.
-3. **kube-proxy** : Kube proxy permet de mettre les nodes en réseau avec des règles qui assurent la communication entre les pods et et les entités extérieures au cluster.
-  Kube-proxy peut fonctionner selon 3 modes : iptables, ipvs et userspace. Chaque mode est adapté en fonction de la taille du cluster.
-    
-Ces processus doivent être installés et fonctionnels sur chaque nœud de travail pour garantir une gestion efficace des applications conteneurisées. Cependant, la gestion des nœuds de travail et la planification des pods dépendent du nœud maître (Master Node).
-
-### 3.2 Master Node in K8s cluster:
-
-![image info](./src/imgs/k8s_master_node.png)
-
-Le nœud maître, également connu sous le nom de plan de contrôle (control plane), est chargé de gérer efficacement les nœuds de travail (ou nœuds esclaves). Ses principales responsabilités incluent :
-   - Planification des Pods : Décider sur quels nœuds de travail les pods doivent être déployés.
-   - Surveillance des Nœuds et Pods : Observer l'état des nœuds de travail et des pods.
-   - Démarrage et Redémarrage des Pods : Assurer que les pods sont lancés et redémarrés si nécessaire.
-   - Gestion des Nouveaux Nœuds de Travail : Intégrer les nouveaux nœuds de travail dans le cluster.
-
-Les nœuds maîtres dans un cluster Kubernetes exécutent les processus clés suivants :
-   - **kube-apiserver** : Le point d'entrée principal pour toutes les communications avec le cluster, traitant les requêtes API et coordonnant les interactions entre les différents composants Kubernetes.
-   - **kube-controller-manager** (kubectl): Gère les contrôleurs qui surveillent l'état du cluster et apportent les modifications nécessaires pour maintenir l'état désiré (par exemple, redémarrage des pods en cas de défaillance).
-   - **kube-scheduler** : Assigne les pods aux nœuds de travail en fonction des ressources disponibles et des contraintes de planification.
-   - **etcd** : La base de données distribuée qui stocke l'état actuel du cluster, y compris les configurations et les métadonnées des objets Kubernetes.
-
-![image info](./src/imgs/k8s_archi.png)
-
-
-## 4. Concepts de Kubernetes
-## 4.1 Principes d’orchestration
-### 4.1.1 Haute disponibilité
+### **Concepts de Kubernetes** :
+#### Haute disponibilité
 - Faire en sorte qu’un service ait un “uptime” élevé.
 - On veut que le service soit tout le temps accessible même lorsque certaines ressources manquent :
   - elles tombent en panne
@@ -129,7 +142,7 @@ Les nœuds maîtres dans un cluster Kubernetes exécutent les processus clés su
   - des IP flottantes qui fonctionnent comme des load balancers
   - etc.
 - Nous allons voir que Kubernetes intègre automatiquement les principes de load balancing et de healthcheck dans l’orchestration de conteneurs
-### 4.1.2 Répartition de charge (load balancing)
+#### Répartition de charge (load balancing)
 
 ![image info](./src/imgs/k8s_loadbalancer.png){ width=40% }
 
@@ -145,14 +158,14 @@ Les nœuds maîtres dans un cluster Kubernetes exécutent les processus clés su
   - HAProxy : Le plus répandu en load balancing.
   - Traefik : Simple à configurer et se fond dans l’écosystème des conteneurs Docker et Kubernetes
   - NGINX : Serveur web central qui a depuis quelques années des fonctions puissantes de load balancing et TCP forwarding.
-### 4.1.3 Healthchecks
+#### Healthchecks
 Fournir à l’application une façon d’indiquer qu’elle est disponible, c’est-à-dire :
 - qu’elle est démarrée (liveness)
 - qu’elle peut répondre aux requêtes (readiness).
 
 ![image info](./src/imgs/k8s_healthchecks_1.png)
 ![image info](./src/imgs/k8s_healthchecks_2.png)
-### 4.1.4 Découverte de service (service discovery)
+#### Découverte de service (service discovery)
 Classiquement, les applications ne sont pas informées du contexte dans lequel elles tournent : la configuration doit être opérée de l’extérieur de l’application.
   - par exemple avec des fichiers de configuration fournie via des volumes
   - ou via des variables d’environnement
@@ -174,7 +187,7 @@ le DNS devient trop complexe à partir de quelques dizaines d’enregistrements
 **Solutions de découverte de service**
 - Consul (Hashicorp) : assez simple d’installation et fourni avec une sympathique interface web.
 - etcd : a prouvé ses performances à plus grande échelle mais un peu plus complexe
-### 4.1.5 Les stratégies de déploiement
+#### Les stratégies de déploiement
 SRC : https://blog.container-solutions.com/kubernetes-deployment-strategies
 
 Il existe deux types de stratégies de rollout native à Kubernetes :
@@ -187,56 +200,287 @@ Mais il existe un panel de stratégies plus large pour updater ses apps :
 - A/B testing: diffusion d’une nouvelle version à un sous-ensemble d’utilisateurs de manière précise (en-têtes HTTP, cookie, région, etc.).
   - pas possible par défaut avec Kubernetes, implique une infrastructure plus avancée avec reverse proxy (Istio, Traefik, nginx/haproxy personnalisé, etc.).
 
-## 5. Objets Kubernetes
-### Introduction:
+### **L’écosystème Kubernetes** :
+
+L'écosystème Kubernetes est constitué d'une variété de flavours qui implémentent les standards définis par Kubernetes, notamment pour les solutions réseau, le stockage, le loadbalancing, l'Ingress, l'autoscaling de clusters et le monitoring. Bien qu'il soit possible de créer un cluster Kubernetes personnalisé, cela demande une expertise technique et des choix complexes, ce qui pousse souvent les utilisateurs vers des solutions de fournisseurs de cloud, entraînant un vendor lock-in.
+
+Voici quelques exemples d'écosystèmes Kubernetes populaires :
+- **Google Kubernetes Engine (GKE)** : L’écosystème Kubernetes développé par Google. Très populaire car très flexible tout en étant l’implémentation de référence de Kubernetes.
+- **Azure Kubernetes Services (AKS)** : Un écosystème Kubernetes axé sur l’intégration avec les services du cloud Azure (stockage, registry, réseau, monitoring, services de calcul, loadbalancing, bases de données…).
+- **Elastic Kubernetes Services (EKS)** : Un écosystème Kubernetes assez standard à la sauce Amazon axé sur l’intégration avec le cloud Amazon (la gestion de l’accès, des loadbalancers ou du scaling notamment, le stockage avec Amazon EBS, etc.)
+- **Rancher** : Un écosystème Kubernetes très complet, assez opinionated et entièrement open-source, non lié à un fournisseur de cloud. Inclut l’installation de stack de monitoring (Prometheus), de logging, de réseau mesh (Istio) via une interface web agréable. Rancher maintient aussi de nombreuses solutions open source, comme par exemple Longhorn pour le stockage distribué.
+- **k3s** : Un écosystème Kubernetes fait par l’entreprise Rancher et axé sur la légèreté. Il remplace etcd par une base de données Postgres, utilise Traefik pour l’ingress et Klipper pour le loadbalancing.
+- **Openshift** : Une version de Kubernetes configurée et optimisée par Red Hat pour être utilisée dans son écosystème. Tout est intégré donc plus guidé, avec l’inconvénient d’être un peu captif·ve de l’écosystème et des services vendus par Red Hat.
+  
+![image info](./src/imgs/k8s_archi_basic.png)
+
+## 2. Architecture de Kubernetes:
+
+We start with a basic overview of the **Kubernetes cluster architecture**.
+
+At a high level, Kubernetes manages applications through containers in an automated manner, ensuring communication between services and scaling as required.
+
+Let’s use an analogy of ships to understand the architecture.
+
+### **1. Worker Nodes (Cargo Ships):**
+Worker nodes host applications as containers. These nodes are like cargo ships, which do the actual work of carrying containers. Containers are loaded, managed, and executed here. Each worker node has:
+
+- **Kubelet (The Captain)**: The kubelet is the node's agent, responsible for receiving instructions from the control plane (master node) and ensuring that containers are running correctly.
+- **Container Runtime (Docker/ContainerD)**: This engine runs the containers.
+- **Kube Proxy (Communication Manager)**: Manages network communication between containers across nodes, ensuring they can talk to each other.
+
+**Worker Node In K8s Cluster:**
+
+![image info](./src/imgs/k8s_worker_node.png)
+
+En tant que développeur ou administrateur Kubernetes, vous interagirez principalement avec les nœuds de travail (worker nodes) pour déployer, mettre à jour ou autoscaler vos applications conteneurisées. Un nœud de travail exécute le travail réel du cluster et contient des pods, qui sont des abstractions de vos applications conteneurisées.
+
+Chaque nœud de travail exécute trois processus clés :
+1. **Container Runtime** : C'est l'environnement dans lequel les conteneurs sont exécutés. Exemples : containerd, CRI-O, Docker.
+2. **kubelet** : Le kubelet est un agent principal qui s'exécute sur chaque nœud de travail. Il interagit à la fois avec le nœud et les conteneurs sur ce nœud. Il a plusieurs responsabilités clés :
+   - **Gestion des Pods** : Il maintient un ensemble de pods (composés de un ou plusieurs conteneurs) sur le système local du nœud.
+   - **Enregistrement et Rapport** : Il enregistre le nœud auprès du cluster Kubernetes, envoie des événements, des états des pods, et rapporte l'utilisation des ressources.
+   - **Observation des PodSpecs** : Le kubelet surveille les PodSpecs (descriptions de pods en YAML ou JSON) via l'API Kubernetes et veille à ce que les conteneurs décrits dans ces PodSpecs soient en cours d'exécution et en bonne santé.
+   - Lorsque Kubernetes veut planifer un pod, il envoie des PodSecs du pod au Kubelet. Le kubelet s’assure alors que les conteneurs sont sains et son conforme à la configuration déclarative.
+3. **kube-proxy** : Kube proxy permet de mettre les nodes en réseau avec des règles qui assurent la communication entre les pods et et les entités extérieures au cluster.
+  Kube-proxy peut fonctionner selon 3 modes : iptables, ipvs et userspace. Chaque mode est adapté en fonction de la taille du cluster.
+    
+Ces processus doivent être installés et fonctionnels sur chaque nœud de travail pour garantir une gestion efficace des applications conteneurisées. Cependant, la gestion des nœuds de travail et la planification des pods dépendent du nœud maître (Master Node).
+
+### **2. Master Node (Control Ships):**
+The master node is like a control ship, managing the entire fleet of worker nodes. It oversees which containers go where and ensures everything is running smoothly. Components on the master node include:
+
+- **etcd (Data Storage)**: A distributed key-value store that holds information about the cluster's state.
+- **Scheduler (The Crane)**: Assigns containers to nodes based on resource availability and scheduling policies.
+- **Controllers (Operations and Cargo Teams)**: Handle different responsibilities:
+  - **Node Controller**: Manages worker nodes.
+  - **Replication Controller**: Ensures the desired number of containers are always running.
+- **Kube API Server (The Orchestrator)**: The main control unit that orchestrates operations across the cluster. It exposes APIs for interaction between external users, nodes, and other components.
+
+The **master node** ensures the health and management of the cluster, while the **worker nodes** handle running the containers.
+
+In the upcoming sections, we will dive deeper into these components and how they work together to keep Kubernetes clusters running efficiently.
+
+
+Kubernetes adopte une architecture **master/worker**, où un cluster Kubernetes est composé d'au moins un nœud maître (master node) et de plusieurs nœuds de travail (worker nodes), également appelés simplement "nœuds". Ces nœuds peuvent être des machines physiques ou virtuelles; vous interagirez rarement directement avec les nœuds.
+
+- **Nœud maître** : il orchestre l'ensemble du cluster. Il gère la planification des applications, la distribution des ressources et assure la communication entre les nœuds de travail.
+    Le “master” fait référence à un ensemble de processus gérant l’état du cluster. Le master peut également être répliqué pour la disponibilité et la redondance.
+- **Nœuds de travail** : ce sont les machines sur lesquelles les conteneurs d'applications s'exécutent. Chaque nœud de travail est sous la supervision du nœud maître et héberge des pods qui contiennent les conteneurs.
+  
+Cette architecture permet une gestion flexible et évolutive des applications, avec une séparation claire des rôles entre la gestion du cluster (nœud maître) et l'exécution des tâches (nœuds de travail).
+
+**Master Node in K8s cluster:**
+
+![image info](./src/imgs/k8s_master_node.png)
+
+Le nœud maître, également connu sous le nom de plan de contrôle (control plane), est chargé de gérer efficacement les nœuds de travail (ou nœuds esclaves). Ses principales responsabilités incluent :
+   - Planification des Pods : Décider sur quels nœuds de travail les pods doivent être déployés.
+   - Surveillance des Nœuds et Pods : Observer l'état des nœuds de travail et des pods.
+   - Démarrage et Redémarrage des Pods : Assurer que les pods sont lancés et redémarrés si nécessaire.
+   - Gestion des Nouveaux Nœuds de Travail : Intégrer les nouveaux nœuds de travail dans le cluster.
+
+Les nœuds maîtres dans un cluster Kubernetes exécutent les processus clés suivants :
+   - **kube-apiserver** : Le point d'entrée principal pour toutes les communications avec le cluster, traitant les requêtes API et coordonnant les interactions entre les différents composants Kubernetes.
+   - **kube-controller-manager** (kubectl): Gère les contrôleurs qui surveillent l'état du cluster et apportent les modifications nécessaires pour maintenir l'état désiré (par exemple, redémarrage des pods en cas de défaillance).
+   - **kube-scheduler** : Assigne les pods aux nœuds de travail en fonction des ressources disponibles et des contraintes de planification.
+   - **etcd** : La base de données distribuée qui stocke l'état actuel du cluster, y compris les configurations et les métadonnées des objets Kubernetes.
+
+![image info](./src/imgs/k8s_archi.png)
+
+### ETCD
+
+Etcd is a distributed, reliable, and fast **key-value store**. It is widely used in systems like Kubernetes to store critical configuration data, ensuring the system remains consistent even in distributed setups. Let’s break it down:
+
+1. **Key-Value Store**: Unlike traditional relational databases (e.g., SQL), which store data in tables with rows and columns, a key-value store manages data as pairs (a key and its associated value). This is useful for storing configuration data where you just need to look up values quickly based on a unique key.
+
+2. **Distributed System**: Etcd can run in a cluster with multiple nodes to ensure high availability and fault tolerance. This means if one node fails, others can still serve data.
+
+3. **Reliability**: Etcd uses the **RAFT consensus algorithm** to make sure that all nodes in a cluster agree on the current state, ensuring consistent data even if nodes fail or are added.
+
+#### Key Concepts
+
+- **Keys and Values**: You store data using a unique key and retrieve it using the same key. For example:
+  - Store: `etcdctl put key1 "value1"`
+  - Retrieve: `etcdctl get key1`
+
+- **Versioning**: Etcd has seen significant changes between versions:
+  - **v2.x**: Earlier version, widely used but slower and less efficient than v3.
+  - **v3.x**: Improved performance and API. Most modern systems, including Kubernetes, use Etcd v3.
+
+#### Using etcd
+
+1. **Installation**: Download the appropriate binaries from the [GitHub releases](https://github.com/etcd-io/etcd/releases), extract them, and run the etcd executable to start the service.
+   - Etcd runs on port `2379` by default.
+   
+   1. Download Binaries
+      curl -L https://github.com/etcd-io/etcd/releases/download/v3.3.11/etcd-
+      v3.3.11-linux-amd64.tar.gz -o etcd-v3.3.11-linux-amd64.tar.gz
+      tar xzvf etcd-v3.3.11-linux-amd64.tar.gz
+      ./etcd
+      Operate
+  2. Extract
+    tar xzvf etcd-v3.3.11-linux-amd64.tar.gz
+  3. Run ETCD Service
+    ./etcd
+
+2. **etcdctl**: This is the command-line client to interact with etcd.
+   - To set a key: `etcdctl set mykey "myvalue"`
+   - To get a key: `etcdctl get mykey`
+   - To check etcd version: `etcdctl version`
+
+3. **API Versions**: etcdctl can operate in v2 or v3 API modes.
+   - To use v3 API, set the environment variable: `ETCDCTL_API=3`
+
+#### Why Use etcd?
+
+- **Consistency**: Etcd ensures that data is consistent across distributed systems.
+- **Kubernetes**: It plays a critical role as Kubernetes uses etcd to store all cluster data, making it essential for cluster state management.
+
+**Next Steps**:
+In future lessons, you'll explore how to set up etcd in a high-availability environment, the RAFT consensus algorithm, and how it integrates with Kubernetes for managing cluster state.
+
+### kube-apiserver
+
+Hello, and welcome to this lecture. In this lecture, we will discuss the **kube-apiserver**, the core management component in Kubernetes.
+
+When you run a `kubectl` command, it communicates with the **kube-apiserver**, which handles the following key tasks:
+1. **Authenticating and validating requests**.
+2. **Retrieving and updating data** from the **etcd** cluster, the main data store for the cluster.
+
+For example, when creating a pod:
+- The API server **authenticates and validates** the request.
+- It creates the **pod object** without assigning it to a node.
+- It updates **etcd** with the pod information.
+- The **scheduler** monitors the API server, detects the new pod, selects a node, and informs the API server.
+- The API server updates **etcd** with the node assignment and passes this information to the **kubelet** on the assigned node.
+- The **kubelet** then instructs the container runtime to deploy the pod and updates the API server once completed. The api server then updates the data in the etcd.
+- The **kube-apiserver** is central to all actions in the cluster, handling **authentication, validation**, and **interaction with etcd**.
+
+**In summary:**
+- Other components, such as the **scheduler**, **kube-controller-manager**, and **kubelet**, communicate with the cluster via the **kube-apiserver**.
+
+**Setup and Configuration:**
+If you used **kubeadm** to bootstrap your cluster, the **kube-apiserver** runs as a pod in the **kube-system** namespace. The configuration is located in `/etc/kubernetes/manifests/kube-apiserver.yaml`. In non-kubeadm setups, you can find its configuration in `/etc/systemd/system/kube-apiserver.service`.
+
+The **kube-apiserver** is run with many options, including **certificates** for secure communication between components and the **etcd servers**' location. You can inspect these options by viewing the respective configuration files or listing the processes on the master node.
+
+
+### Kube Controller Manager 
+
+The **Kube Controller Manager** manages various controllers in Kubernetes, each with specific responsibilities. Controllers are like departments that monitor the state of different components in the system and take actions to ensure the system operates as desired.
+
+#### Key Functions of Controllers:
+**Controllers** are processes that continuously monitor and adjust the state of the cluster. For example:
+  - The **Node Controller** monitors the health of nodes, checking their status every 5 seconds. If a node becomes unreachable (after 40 seconds), the Node Controller waits for 5 minutes before removing its pods and reallocating them to healthy nodes (if they belong to a ReplicaSet).
+  - The **Replication Controller** ensures that the desired number of pods are running within a ReplicaSet. If a pod dies, it creates another one.
+
+These are just two examples, but many controllers exist in Kubernetes, managing resources like **deployments, services, namespaces, and persistent volumes**.
+
+#### **Kube Controller Manager** Overview:
+- All controllers are packaged into a single process called the **Kube Controller Manager**. When installed, it automatically includes the various controllers.
+  
+- The **Kube Controller Manager** communicates with the **kube-apiserver** to ensure the cluster's state matches the desired state defined by the user.
+
+#### Configuration:
+- The **Kube Controller Manager** can be customized via various options, including settings like:
+  - **Node monitor period** (time interval for checking node status).
+  - **Grace period** (time before marking a node as unreachable).
+  - **Eviction timeout** (time before removing pods from an unreachable node).
+  
+- By default, all controllers are enabled, but you can specify which ones to activate via the `--controllers` option.
+
+#### Viewing and Managing:
+- If you set up your cluster using **kubeadm**, the **Kube Controller Manager** runs as a pod in the **kube-system** namespace, with configuration in `/etc/kubernetes/manifests/kube-controller-manager.yaml`.
+- In a non-kubeadm setup, the configuration is located in the `/etc/systemd/system/kube-controller-manager.service`.
+
+The **Kube Controller Manager** plays a crucial role in maintaining the health and consistency of the Kubernetes cluster by ensuring that resources like nodes and pods are always in the desired state.
+
+
+### Kube-Scheduler
+
+The **Kube-Scheduler** is responsible for deciding which node will run a given pod in a Kubernetes cluster. However, the scheduler does not actually place the pod on the node—that is the job of the **kubelet**. The scheduler’s role is to determine the best node for each pod based on resource availability and other criteria.
+
+#### Key Functions:
+- The scheduler matches pods to nodes by analyzing the **resource requirements** of the pod (CPU, memory) and the **available capacity** on the nodes.
+- It operates in two phases:
+  1. **Filtering**: The scheduler eliminates nodes that don't meet the resource needs of the pod.
+  2. **Ranking**: The scheduler ranks the remaining nodes based on a priority function, which can include factors like how much free capacity a node will have after placing the pod. The node with the highest score is chosen.
+
+#### Decision Factors:
+- **Resource requirements** (e.g., CPU, memory).
+- **Node-specific configurations** like **node selectors**, **taints and tolerations**, and **affinity rules**.
+- After filtering nodes that do not meet the pod's requirements, the scheduler assigns a score to the remaining nodes to determine the best fit.
+
+#### Installation and Configuration:
+- If your cluster is set up using **kubeadm**, the **kube-scheduler** runs as a pod in the **kube-system** namespace on the master node, with configuration located in `/etc/kubernetes/manifests/kube-scheduler.yaml`.
+- In a non-kubeadm setup, the **kube-scheduler** runs as a service, and you can view the options in the configuration file located at `/etc/systemd/system/kube-scheduler.service`.
+
+#### Customization:
+- Kubernetes allows for custom schedulers if the default one does not fit your needs. You can create and deploy your own scheduler to handle specific use cases or resource constraints.
+
+The **Kube-Scheduler** is essential for managing how resources are allocated across nodes, ensuring that pods are placed on nodes that can best handle their workload. Advanced topics like **taints and tolerations**, **affinity rules**, and **node selectors** are 
+used to further customize how scheduling works in a Kubernetes cluster.
+
+
+### Kubelet
+
+The **kubelet** is the primary agent on a Kubernetes **worker node**, responsible for managing the state of the node and its pods. It acts as the point of contact between the **Kubernetes control plane** (master node) and the worker node.
+
+#### Key Functions:
+- **Node Registration**: The kubelet registers the node with the Kubernetes cluster.
+- **Pod Management**: When the kubelet receives instructions from the **scheduler** to run a pod, it interacts with the **container runtime engine** (like Docker) to pull the necessary container images and start the pod.
+- **Monitoring and Reporting**: The kubelet continuously monitors the status of the node and the containers running on it. It sends status reports to the **kube-apiserver** to ensure the cluster is functioning correctly.
+
+#### Installation and Configuration:
+- Unlike other components, **kubeadm** does not automatically install the **kubelet**. You must manually install the kubelet on each worker node.
+- To install, download the kubelet, extract it, and run it as a service.
+  
+- You can inspect the running kubelet process and view its options by listing the processes on the worker node and searching for "kubelet."
+
+#### Advanced Topics:
+- **Configuration**: The kubelet can be customized and configured with specific options.
+- **TLS Bootstrapping**: Securing communication with the Kubernetes cluster via **TLS certificates** is a crucial part of the kubelet’s setup, which will be covered later.
+
+The **kubelet** is essential for managing workloads on the worker nodes, ensuring containers are properly running and reporting their status back to the Kubernetes control plane.
+
+
+### Kube-Proxy
+
+The **kube-proxy** is a critical networking component in Kubernetes, enabling communication between pods and services within the cluster. It ensures that traffic intended for a service is forwarded to the appropriate pods.
+
+#### Key Functions:
+- **Pod Networking**: Each pod in Kubernetes can communicate with any other pod using an internal **virtual network**. This network spans all nodes, allowing for pod-to-pod communication.
+- **Service Discovery**: Pods communicate with other pods, such as a web app reaching a database pod, via IP addresses. However, pod IPs are not static. To solve this, Kubernetes introduces **services** to provide a stable IP or name for pods.
+- **Service IP Routing**: Services are virtual components that map traffic to backend pods. The **kube-proxy** manages the routing rules to forward traffic from a service IP to the actual pod IP.
+  
+#### How Kube-Proxy Works:
+- **Traffic Forwarding**: When a service is created, kube-proxy updates the network rules (e.g., using **iptables**) on each node to route traffic meant for the service IP to the backend pod's IP.
+- **Node-Based Deployment**: Kube-proxy runs as a **DaemonSet**, ensuring that one instance of the kube-proxy runs as a pod on each node in the cluster. This ensures every node can forward service-related traffic.
+
+#### Installation:
+- Kube-proxy can be installed by downloading its binary from the **Kubernetes release page**, extracting it, and running it as a service.
+- When using **kubeadm**, kube-proxy is automatically deployed as a DaemonSet.
+
+The **kube-proxy** plays a vital role in service discovery and traffic forwarding in Kubernetes, ensuring that services can be accessed by any pod across the cluster.
+
+
+## 3. Objets Kubernetes
+
 ![image info](./src/imgs/k8s_objets.png)
 En Kubernetes, un **workload** fait référence à une application ou un ensemble de processus déployés dans un cluster. Kubernetes offre plusieurs types de workloads pour répondre à différents types d'applications et de besoins de gestion. Voici les principaux types de workloads Kubernetes :
-
 1. **Pod**
-- **Description** : Le **Pod** est l’unité de base de déploiement dans Kubernetes. Il représente un ou plusieurs conteneurs qui partagent le même réseau et espace de stockage. Généralement, un Pod contient un seul conteneur.
-- **Usage** : Utilisé lorsque vous souhaitez exécuter une instance unique ou plusieurs conteneurs qui doivent cohabiter dans le même environnement réseau et de stockage.
-
-1. **Deployment**
-- **Description** : Le **Deployment** est le workload le plus courant pour les applications sans état (stateless). Il permet de gérer une réplique d’un ensemble de Pods de manière déclarative (scaling, mise à jour, rollback).
-- **Usage** : Pour les applications web ou microservices sans état nécessitant une mise à l’échelle et une gestion des versions. Le Deployment garantit que le nombre désiré de Pods est toujours en exécution.
-
-1. **StatefulSet**
-- **Description** : Le **StatefulSet** est utilisé pour déployer et gérer des applications avec état (stateful). Contrairement au Deployment, chaque Pod d’un StatefulSet est unique (chaque Pod a un identifiant stable) et conserve son stockage même après redémarrage.
-- **Usage** : Pour des bases de données, des systèmes distribués ou des applications où chaque instance doit conserver une identité unique (ex : MySQL, Cassandra).
-
-1. **DaemonSet**
-- **Description** : Un **DaemonSet** s’assure qu’un Pod spécifique est exécuté sur tous les nœuds (ou certains nœuds sélectionnés) du cluster.
-- **Usage** : Utilisé pour des tâches de monitoring, de logging, ou pour des composants de maintenance réseau qui doivent être déployés sur chaque nœud (ex : Fluentd, Collectd).
-
-1. **ReplicaSet**
-- **Description** : Un **ReplicaSet** garantit qu’un nombre spécifié de répliques d’un Pod sont exécutées en permanence.
-- **Usage** : Bien qu’il soit utilisé directement dans certains cas, le ReplicaSet est souvent géré implicitement par un Deployment pour maintenir le bon nombre de Pods en fonctionnement.
-
-1. **Job**
-- **Description** : Un **Job** est utilisé pour exécuter des tâches ponctuelles ou des tâches qui doivent s'exécuter une seule fois avec succès (batch jobs). Le Job garantit que le nombre spécifié de Pods termine la tâche avec succès.
-- **Usage** : Pour des traitements par lots, des tâches de nettoyage ponctuelles ou des scripts d’initiation.
-
-1. **CronJob**
-- **Description** : Un **CronJob** permet de planifier des Jobs à exécuter périodiquement ou à des moments précis (comme une tâche cron sur un système Unix).
-- **Usage** : Utilisé pour des tâches récurrentes comme des sauvegardes de base de données, des envois de rapports, ou d’autres tâches programmées.
-
-1. **Horizontal Pod Autoscaler (HPA)**
-- **Description** : Le **HPA** permet de faire évoluer dynamiquement (scale) le nombre de Pods d'un Deployment, ReplicaSet ou StatefulSet en fonction des métriques, comme l'utilisation du CPU ou de la mémoire.
-- **Usage** : Utilisé pour des applications nécessitant une montée en charge automatique selon la demande.
-
-1. **Vertical Pod Autoscaler (VPA)**
-- **Description** : Le **VPA** ajuste automatiquement les ressources CPU et mémoire d’un Pod en fonction de l’utilisation réelle.
-- **Usage** : Pour des applications où la charge de travail fluctue et où les ressources allouées au Pod doivent être adaptées dynamiquement.
-
-1.  **ReplicationController**
-- **Description** : **ReplicationController** est une version plus ancienne de ReplicaSet et remplit une fonction similaire en garantissant que le bon nombre de répliques d’un Pod est en cours d’exécution à tout moment.
-- **Usage** : ReplicaSet a remplacé ReplicationController, bien que certains clusters Kubernetes plus anciens puissent encore l'utiliser.
-
-1.  **Tâches Sidecar (Pattern Sidecar)**
-- **Description** : Bien que non directement un type de workload, le **Sidecar** est un pattern où un Pod héberge plusieurs conteneurs, l’un étant l'application principale et l’autre étant un conteneur d'accompagnement (sidecar) pour des tâches comme le logging, le monitoring, ou la mise à jour continue.
-- **Usage** : Utilisé pour ajouter des fonctionnalités auxiliaires à un Pod sans affecter le conteneur principal (ex : proxy de service, agrégateur de logs).
-
-Les différents types de workloads Kubernetes permettent d’adapter vos déploiements à des besoins variés, que ce soit pour des applications sans état, avec état, ou encore des tâches programmées et des services d’infrastructure.
+2. **Deployment**
+3. **StatefulSet**
+4. **DaemonSet**
+5. **ReplicaSet**
+6. **Job**
+7. **CronJob**
+8. **Horizontal Pod Autoscaler (HPA)**
+9. **Vertical Pod Autoscaler (VPA)**
+10. **ReplicationController**
+11. **Tâches Sidecar (Pattern Sidecar)**
+    
 ### L’API et les Objets Kubernetes
 Utiliser Kubernetes consiste à déclarer des objets grâce à l’API Kubernetes pour décrire l’état souhaité d’un cluster : quelles applications ou autres processus exécuter, quelles images elles utilisent, le nombre de replicas, les ressources réseau et disque que vous mettez à disposition, etc.
 
@@ -309,7 +553,7 @@ L’ordre n’importe pas car les ressources sont décrites déclarativement c�
 
 On peut sauter des lignes dans le YAML et rendre plus lisible les descriptions
 On sépare les différents objets par ---
-### 5.1 Les namespaces
+### 3.1 Les namespaces
 Tous les objets Kubernetes sont rangés dans différents espaces de travail isolés appelés **namespaces**.
 Cette isolation permet 3 choses :
 - ne voir que ce qui concerne une tâche particulière (ne réfléchir que sur une seule chose lorsqu’on opère sur un cluster)
@@ -324,7 +568,7 @@ créer une nouvelle configuration dans la kubeconfig pour changer le namespace p
 Kubernetes gère lui-même ses composants internes sous forme de pods et services.
 
 - Si vous ne trouvez pas un objet, essayez de lancer la commande kubectl avec l’option **-**A ou **--all-namespaces**
-### 5.2 Les Pods
+### 3.2 Les Pods
 Un Pod est l’unité d’exécution de base d’une application Kubernetes que vous créez ou déployez. Un Pod représente des process en cours d’exécution dans votre Cluster.
 
 Un Pod encapsule un conteneur (ou souvent plusieurs conteneurs), des ressources de stockage, **une IP réseau unique**, et des options qui contrôlent comment le ou les conteneurs doivent s’exécuter (ex: restart policy). Cette collection de conteneurs et volumes tournent dans le même environnement d’exécution mais les processus sont isolés.
@@ -390,7 +634,133 @@ spec:
           protocol: TCP
 
 ```
-### 5.3 Les ReplicaSet
+
+Before discussing pods in Kubernetes, let's assume that:
+- Your application has been developed and is available as a Docker image.
+- The Kubernetes cluster is already set up and operational (either single-node or multi-node).
+  
+In Kubernetes, the goal is to deploy applications in the form of containers across worker nodes in a cluster. However, Kubernetes doesn’t deploy containers directly onto worker nodes; instead, it encapsulates them into an object called **Pods**.
+
+#### Key Concepts of Pods:
+1. **Definition**: A pod is the smallest, most basic deployable unit in Kubernetes and is a single instance of an application.
+   
+2. **Single Container Pod**: In the simplest scenario, a pod contains one container, which represents an instance of your application.
+
+3. **Scaling**: 
+   - To scale your application, you do not add more containers to a single pod. Instead, you create new pods, each with its own instance of the application.
+   - Pods can be distributed across different nodes if necessary, to balance load or if one node reaches capacity.
+
+4. **Multi-Container Pods**:
+   - Though rare, a pod can contain multiple containers if they are performing different tasks. For example, a web application might have a helper container for processing data alongside the main application container.
+   - Containers within the same pod share resources, such as network and storage, and can communicate via `localhost`.
+
+#### Containers & Pods in a Non-Kubernetes Environment:
+Imagine you're deploying applications directly on Docker. Scaling involves running multiple `docker run` commands, each creating new containers. However, if the architecture grows complex (e.g., a helper container needs to work with the main app), you would need to manually link containers, manage their networks, and handle their lifecycle.
+
+Kubernetes simplifies this through pods, as it automatically handles:
+- Network connectivity
+- Shared volumes
+- Container lifecycle management
+
+#### Basic Pod Operations:
+- **Creating Pods**: Use `kubectl run` to deploy a Docker container by creating a pod. For example:
+  ```bash
+  kubectl run nginx --image=nginx
+  ```
+  This creates a pod that encapsulates an NGINX container.
+
+- **Listing Pods**: To view running pods, use:
+  ```bash
+  kubectl get pods
+  ```
+  This command will show the status of the pod (e.g., `ContainerCreating`, `Running`).
+
+
+#### Kubernetes Pods with YAML:
+
+In Kubernetes, YAML files are used to define objects such as pods, deployments, services, etc. These files follow a specific structure, and creating a pod using a YAML configuration file is an essential task for Kubernetes management. Below is a summary of how to create and manage pods using YAML.
+
+##### Key Components of a Kubernetes YAML File:
+1. **API Version**:
+   - Specifies the version of the Kubernetes API you're using.
+   - For pods, the API version is typically `v1`.
+   - Example:
+     ```yaml
+     apiVersion: v1
+     ```
+
+2. **Kind**:
+   - Refers to the type of object you're creating. In this case, the object type is `Pod`.
+   - Example:
+     ```yaml
+     kind: Pod
+     ```
+
+3. **Metadata**:
+   - Contains metadata such as the **name** and **labels** for the object.
+   - The name is a string value that identifies the pod, and labels are key-value pairs used to categorize and manage objects.
+   - Example:
+     ```yaml
+     metadata:
+       name: my-app-pod
+       labels:
+         app: my-app
+     ```
+
+4. **Spec**:
+   - Defines the desired state of the pod, which includes container specifications.
+   - You need to specify:
+     - The **containers** field, which is a list of container objects. Each container can have its own properties like name and image.
+   - Example:
+     ```yaml
+     spec:
+       containers:
+       - name: nginx-container
+         image: nginx
+     ```
+
+##### Example YAML File to Create a Pod:
+Here is a full example of a YAML configuration to create a pod running an NGINX container:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: my-app-pod
+  labels:
+    app: my-app
+spec:
+  containers:
+  - name: nginx-container
+    image: nginx
+```
+
+##### Creating the Pod:
+Once the YAML file is ready, use the following command to create the pod:
+```bash
+kubectl create -f pod-definition.yaml
+```
+
+##### Verifying the Pod:
+- **List Pods**: To view the list of running pods:
+  ```bash
+  kubectl get pods
+  ```
+- **Describe Pod**: To get detailed information about the pod, including its labels, events, and container information:
+  ```bash
+  kubectl describe pod my-app-pod
+  ```
+
+**Summary:**
+1. A Kubernetes YAML file has four top-level properties: `apiVersion`, `kind`, `metadata`, and `spec`.
+2. In the `spec` section, you define container details, such as its name and Docker image.
+3. Use `kubectl create -f <filename>` to create the pod and `kubectl get pods` to verify its status.
+
+This method is a simple and efficient way to manage Kubernetes objects like pods through YAML.
+
+
+
+### 3.3 Les ReplicaSet
 Un **ReplicaSet** est un composant de Kubernetes utilisé pour garantir un nombre constant de pods en cours d'exécution dans un cluster. Il surveille l'état des pods et s'assure que le nombre spécifié de répliques est toujours disponible. Si un pod meurt ou échoue, le ReplicaSet en crée un nouveau pour maintenir le bon nombre de répliques.
 
 
@@ -469,7 +839,111 @@ Commandes principales pour manipuler un ReplicaSet :
    ```bash
    kubectl set image rs <nom-du-replicaset> <container-name>=<new-image>
    ```
-### 5.4 Les Deployments (deploy)
+
+#### Kubernetes Controllers: Replication Controller & Replica Set
+
+**Kubernetes Controllers** are the brain behind Kubernetes, responsible for managing the desired state of objects. In this lecture, we focus on two important controllers: **Replication Controller** and **Replica Set**.
+
+##### 1. **Replication Controller**
+- Ensures a specified number of pod replicas are running at all times, even if it’s just one pod.
+- Useful for **high availability** and **load balancing**. If one pod crashes, it ensures another one is created automatically.
+- Allows you to run **multiple instances** of the same pod to handle increased load across multiple nodes.
+
+##### 2. **Replica Set**
+- **Replica Set** is a newer version of the Replication Controller and is preferred over the older Replication Controller.
+- Ensures a fixed number of pod replicas are running at all times and can manage **pre-existing pods** by selecting them through **label selectors**.
+
+###### YAML Structure for Replication Controller & Replica Set
+
+Both controllers follow a similar structure in the YAML configuration file, but there are key differences.
+
+###### Replication Controller YAML Example:
+```yaml
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: my-app-rc
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx
+```
+
+###### Replica Set YAML Example:
+```yaml
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: my-app-rs
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx
+```
+
+###### Differences:
+- **API Version**: 
+  - Replication Controller uses `v1`, while Replica Set uses `apps/v1`.
+- **Selector**: 
+  - Replica Set requires a **selector** to define which pods it should manage. Replication Controller does not require this explicitly.
+- **Use Case**: 
+  - Replica Set can manage both **newly created pods** and **pre-existing pods** based on matching labels.
+
+##### Commands
+- **Creating a Replication Controller or Replica Set**:
+  ```bash
+  kubectl create -f rc-definition.yaml  # For Replication Controller
+  kubectl create -f rs-definition.yaml  # For Replica Set
+  ```
+
+- **Listing Controllers**:
+  ```bash
+  kubectl get replicationcontrollers  # For Replication Controller
+  kubectl get replicasets             # For Replica Set
+  ```
+
+- **Scaling a Replica Set**:
+  - Update replicas in the YAML and replace:
+    ```bash
+    kubectl replace -f rs-definition.yaml
+    ```
+  - Use the `kubectl scale` command:
+    ```bash
+    kubectl scale --replicas=6 -f rs-definition.yaml
+    ```
+
+- **Deleting a Replica Set**:
+  ```bash
+  kubectl delete replicaset my-app-rs
+  ```
+
+##### Key Concepts:
+- **Replication Controller**: Ensures a set number of pods are always running.
+- **Replica Set**: More flexible, includes selectors to match existing pods.
+- **Labels & Selectors**: Crucial for identifying and managing pods, especially in Replica Sets.
+
+
+
+### 3.4 Les Deployments (deploy)
 Les déploiements sont les objets effectivement créés manuellement lorsqu’on déploie une application. Ce sont des objets de plus haut niveau que les pods et replicaset et les pilote pour gérer un déploiement applicatif.
 ![image info](./src/imgs/k8s_deploy_archi.png)
 
@@ -508,7 +982,143 @@ template:
         ports:
           - containerPort: 80
   ```
-### 5.5 Les Services
+
+
+In this lecture, we dive into **Kubernetes deployments**, a higher-level object that manages pods and ReplicaSets, offering powerful features like **rolling updates**, **rollbacks**, and the ability to **pause and resume** changes. Deployments make managing the lifecycle of your application in production easier and more reliable.
+
+#### Key Features of Kubernetes Deployments:
+1. **Multiple Instances**: Deploy many instances of your application to handle increased load or ensure high availability.
+2. **Rolling Updates**: Seamlessly upgrade application instances one by one, ensuring that your application remains available during updates.
+3. **Rollback**: If something goes wrong during an update, easily roll back to a previous version.
+4. **Pause and Resume**: Apply multiple changes (e.g., scaling, updating containers, modifying resources) and then resume them all at once, controlling when the changes take effect.
+
+#### Deployments vs. ReplicaSets
+- **Pods**: Represent a single instance of your application.
+- **ReplicaSets**: Manage multiple pod replicas, ensuring the desired number is running at all times.
+- **Deployments**: Provide an abstraction over ReplicaSets and allow for advanced features like rolling updates and rollbacks.
+
+#### YAML Example for Deployment:
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: my-app-deployment
+  labels:
+    app: my-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: my-app
+  template:
+    metadata:
+      labels:
+        app: my-app
+    spec:
+      containers:
+      - name: nginx-container
+        image: nginx:1.16
+```
+
+#### Key Sections:
+- **API Version**: Use `apps/v1` for deployments.
+- **Kind**: Set to `Deployment`.
+- **Metadata**: Name your deployment and add labels.
+- **Spec**:
+  - **Replicas**: Define the number of pod instances you want.
+  - **Selector**: Specifies which pods the deployment should manage.
+  - **Template**: Defines the pod structure, similar to ReplicaSet.
+
+#### Commands:
+- **Create a deployment**:
+  ```bash
+  kubectl create -f deployment-definition.yaml
+  ```
+
+- **View deployment**:
+  ```bash
+  kubectl get deployments
+  ```
+
+- **View ReplicaSet created by the deployment**:
+  ```bash
+  kubectl get replicasets
+  ```
+
+- **View pods managed by the ReplicaSet**:
+  ```bash
+  kubectl get pods
+  ```
+
+- **View all objects (deployments, ReplicaSets, pods)**:
+  ```bash
+  kubectl get all
+  ```
+
+
+You're absolutely right! Using the `kubectl run` and `kubectl create` commands to generate YAML templates can save a lot of time and effort, especially during an exam or for quick prototyping. Here's a summary of how these commands work and how to apply them effectively:
+
+#### Key `kubectl` Commands for Creating Pods, Deployments, and YAML Files:
+
+#### 1. **Create an NGINX Pod:**
+This command quickly creates a pod named `nginx` running the NGINX image.
+```bash
+kubectl run nginx --image=nginx
+```
+
+#### 2. **Generate a Pod YAML File (without creating the pod):**
+This command generates the YAML manifest for a pod without creating it. The `--dry-run=client` flag ensures the pod isn't actually created, and the `-o yaml` outputs the definition in YAML format.
+```bash
+kubectl run nginx --image=nginx --dry-run=client -o yaml
+```
+
+#### 3. **Create a Deployment:**
+To create a deployment named `nginx` with the NGINX image, use the following:
+```bash
+kubectl create deployment nginx --image=nginx
+```
+
+#### 4. **Generate a Deployment YAML File (without creating the deployment):**
+This is useful when you want to preview or modify the deployment configuration before creating it.
+```bash
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml
+```
+
+#### 5. **Generate and Save a Deployment YAML File:**
+You can save the YAML output directly to a file for further modifications.
+```bash
+kubectl create deployment nginx --image=nginx --dry-run=client -o yaml > nginx-deployment.yaml
+```
+
+#### 6. **Modify the YAML File (e.g., change replicas) and Apply It:**
+After generating the file, you can edit it (e.g., set the number of replicas), and then use `kubectl create` or `kubectl apply` to create the deployment.
+```bash
+kubectl create -f nginx-deployment.yaml
+```
+
+#### 7. **Create a Deployment with Specific Number of Replicas (in Kubernetes 1.19+):**
+In Kubernetes 1.19 and later, you can use the `--replicas` option to create a deployment with a specified number of replicas directly.
+```bash
+kubectl create deployment nginx --image=nginx --replicas=4 --dry-run=client -o yaml > nginx-deployment.yaml
+```
+
+After editing, you can apply the deployment as usual:
+```bash
+kubectl apply -f nginx-deployment.yaml
+```
+
+#### Benefits of Using `kubectl` Commands Instead of YAML:
+- **Speed and Efficiency**: Directly creating objects like Pods or Deployments with a single command is faster than writing the YAML from scratch.
+- **Customizability**: The `--dry-run=client -o yaml` allows you to generate a YAML template, which you can tweak as needed.
+- **CLI-based**: Avoid issues with copying and pasting YAML files in the CLI, which can save time and reduce errors during exams or hands-on tasks.
+
+By practicing these commands regularly, you’ll be well-prepared to handle exam scenarios efficiently!  
+
+#### Summary:
+Deployments simplify managing application updates, scaling, and rollbacks. They automatically create ReplicaSets, which in turn manage the pods. This abstraction provides robust features for maintaining a stable production environment. In the next lectures, we will explore these features in depth, including how to apply rolling updates and rollbacks.
+
+
+### 3.5 Les Services
 
 Dans Kubernetes, un service est un objet qui :
 
@@ -529,8 +1139,84 @@ Les Services sont de trois types principaux :
 - LoadBalancer: expose le service en externe à l’aide d’un Loadbalancer de fournisseur de cloud. Les services NodePort et ClusterIP, vers lesquels le Loadbalancer est dirigé sont automatiquement créés.
 
 ![image info](./src/imgs/k8s_services_types.png){ width=90%, height=30% }
-### 5.6 Le stockage dans Kubernetes
-#### 5.6.1 StorageClasses
+
+This lecture provides a comprehensive overview of **Kubernetes Services** and their role in enabling communication between various components of an application, both internally and externally. Here's a summary of the key concepts covered:
+
+#### **Kubernetes Services Overview**
+- **Purpose**: Services enable communication between groups of Pods (e.g., frontend, backend) or between external users and Pods. They provide a way to expose applications running in Pods to the outside world or other services within the cluster.
+- **Use Cases**: Services allow for loose coupling between microservices in an application by facilitating connectivity.
+
+#### **Networking in Kubernetes**
+- **Pod Network**: Pods typically reside in an internal network (e.g., 10.244.0.0/16). External users can't directly access Pods since they are on a separate network.
+- **Node Access**: By SSH-ing into the node, you can access the Pod’s IP (this is from inside the Kubernetes node), but to expose the application externally (without having to SSH into the node), you need a service.
+
+#### **Types of Kubernetes Services**
+1. **NodePort**:
+   - Exposes the application on a specific port of each node in the cluster (port range 30,000-32,767).
+   - Allows external users to access applications via the node’s IP and the NodePort.
+   
+2. **ClusterIP**:
+   - Creates a virtual IP address within the cluster, enabling communication between different services (e.g., frontend to backend).
+   
+3. **LoadBalancer**:
+   - Provisions a load balancer, especially useful for distributing traffic in cloud environments.
+
+#### **NodePort Service in Detail**
+- **Ports Involved**:
+  1. **TargetPort**: The port on the Pod where the actual service (e.g., web server) is running (e.g., port 80).
+  2. **Port**: The port on the Service object.
+  3. **NodePort**: The port exposed on the node itself, accessible externally.
+  
+- **Example**: A service could map port 30,008 on the node to port 80 on the Pod, allowing external users to access the application by visiting `http://<NodeIP>:30008`.
+
+#### **Creating a NodePort Service**
+- **Definition File**:
+  - The file structure is similar to other Kubernetes objects (e.g., Pods, Deployments) with API version, kind, metadata, and spec sections.
+  - The **type** in the spec section is set to `NodePort`.
+  - **Ports**: Define `targetPort`, `port`, and `nodePort`. The `nodePort` can be specified or automatically assigned.
+  - **Selector**: Labels are used to link the service to the correct Pods.
+
+#### **Connecting Services to Pods**
+- Labels and selectors are used to match Pods with services. The service forwards traffic to any Pod with the matching label.
+
+#### **Load Balancing and High Availability**
+- If multiple Pods exist with the same labels, the service will load-balance traffic across them using a random algorithm.
+- If Pods are spread across multiple nodes, the service will automatically expose the application on the same `NodePort` on all nodes.
+
+#### **Service Flexibility and Adaptation**
+- Kubernetes services automatically update as Pods are added or removed, making them highly flexible and adaptive without additional configuration.
+
+In conclusion, **Kubernetes Services** are essential for enabling connectivity within a cluster, and between a cluster and the outside world. They provide load balancing, internal communication, and the ability to expose applications externally. The creation and management of services is straightforward, and Kubernetes handles much of the complexity under the hood, particularly in dynamic environments where Pods are constantly changing.
+
+
+
+
+#### 3.6.5 les Secrets
+Les Secrets se manipulent comme des objets ConfigMaps, mais sont faits pour stocker des mots de passe, des clés privées, des certificats, des tokens, ou tout autre élément de config dont la confidentialité doit être préservée. Un secret se créé avec l’API Kubernetes, puis c’est au pod de demander à y avoir accès.
+
+Il y a 3 façons de donner un accès à un secret :
+
+- le secret est un fichier que l’on monte en tant que volume dans un conteneur (pas nécessairement disponible à l’ensemble du pod). Il est possible de ne jamais écrire ce secret sur le disque (volume tmpfs).
+- le secret est une variable d’environnement du conteneur.
+- cas spécifique aux registres : le secret est récupéré par kubelet quand il pull une image.
+
+Pour définir qui et quelle app a accès à quel secret, on utilise les fonctionnalités dites “RBAC” de Kubernetes
+#### 3.6.6 Les CRD et Operators
+Les CustomResourcesDefinition sont l’objet le plus méta de Kubernetes : inventés par Red Hat pour ses Operators, ils permettent de définir un nouveau type d’objet dans Kubernetes. Combinés à des Operators (du code d’API en Go), ils permettent d’étendre Kubernetes pour gérer de nouveaux objets qui eux-même interagissent avec des objets Kubernetes.
+
+Exemples :
+
+- la chart officielle de la suite Elastic (ELK) définit des objets de type elasticsearch
+- KubeVirt permet de rajouter des objets de type VM pour les piloter depuis Kubernetes
+- Azure propose des objets correspondant à ses ressources du cloud Azure, pour pouvoir créer et paramétrer des ressources Azure directement via la logique de Kubernetes
+
+#### Jobs
+#### CronJobs
+#### Le Role-Based Access Control, les Roles et les RoleBindings
+
+
+## 4. Le stockage dans Kubernetes
+### 4.1 StorageClasses
 Le stockage dans Kubernetes est fourni à travers des types de stockage appelés StorageClasses :
 
 - dans le cloud, ce sont les différentes offres du fournisseur,
@@ -546,7 +1232,7 @@ Quand un conteneur a besoin d’un volume, il crée une PersistentVolumeClaim : 
 - les conteneurs demandent du volume avec les PersistentVolumeClaims
 - les StorageClasses répondent aux PersistentVolumeClaims en créant des objets PersistentVolumes : le conteneur peut accéder à son volume.
 
-#### 5.6.2 StatefulSets
+### 4.2 StatefulSets
 On utilise les **Statefulsets** pour répliquer un ensemble de pods dont l’état est important : par exemple, des pods dont le rôle est d’être une base de données, manipulant des données sur un disque.
 
 Un objet StatefulSet représente un ensemble de pods dotés d’identités uniques et de noms d’hôtes stables. Quand on supprime un StatefulSet, par défaut les volumes liés ne sont pas supprimés.
@@ -560,7 +1246,7 @@ En général, on utilise des StatefulSets quand on veut :
 - des déploiements et du scaling contrôlés et dans un ordre défini
 - des rolling updates dans un ordre défini et automatisées
 
-#### 5.6.3 DaemonSets
+### 4.3 DaemonSets
 Une autre raison de répliquer un ensemble de Pods est de programmer un seul Pod sur chaque nœud du cluster. En général, la motivation pour répliquer un Pod sur chaque nœud est de faire atterrir une sorte d’agent ou de démon sur chaque nœud, et l’objet Kubernetes pour y parvenir est le DaemonSet. Par exemple pour des besoins de monitoring, ou pour configurer le réseau sur chacun des nœuds.
 
 Étant donné les similitudes entre les DaemonSets, les StatefulSets et les Deployments, il est important de comprendre quand les utiliser.
@@ -577,43 +1263,36 @@ Une autre raison de répliquer un ensemble de Pods est de programmer un seul Pod
   - lorsque l’ordre de création des replicas et le nom des pods est important
   - lorsqu’on fait des opérations stateful (écrire dans une base de données)
 
-#### 5.6.4 Les ConfigMaps
+### 4.4 Les ConfigMaps
 D’après les recommandations de développement 12factor, la configuration de nos programmes doit venir de l’environnement. L’environnement est ici Kubernetes.
 
 Les objets ConfigMaps permettent d’injecter dans des pods des fichiers de configuration en tant que volumes.
 
+## 5 Le réseau dans Kubernetes
+### 5.1 Les objets Services
+### 5.2 Les network policies
+### 5.3 Le loadbalancing
+### 5.4 Les objets Ingresses
 
-#### 5.6.5 les Secrets
-Les Secrets se manipulent comme des objets ConfigMaps, mais sont faits pour stocker des mots de passe, des clés privées, des certificats, des tokens, ou tout autre élément de config dont la confidentialité doit être préservée. Un secret se créé avec l’API Kubernetes, puis c’est au pod de demander à y avoir accès.
 
-Il y a 3 façons de donner un accès à un secret :
+## 6. Sécurité dans Kubernetes
+### 6.1 Concepts de base de la sécurité
+### 6.2 Authentification et autorisation
+### 6.3 Secrets et ConfigMaps
+### 6.4 Network Policies
+### 6.5 RBAC (Role-Based Access Control)
 
-- le secret est un fichier que l’on monte en tant que volume dans un conteneur (pas nécessairement disponible à l’ensemble du pod). Il est possible de ne jamais écrire ce secret sur le disque (volume tmpfs).
-- le secret est une variable d’environnement du conteneur.
-- cas spécifique aux registres : le secret est récupéré par kubelet quand il pull une image.
 
-Pour définir qui et quelle app a accès à quel secret, on utilise les fonctionnalités dites “RBAC” de Kubernetes
-#### 5.6.6 Les CRD et Operators
-Les CustomResourcesDefinition sont l’objet le plus méta de Kubernetes : inventés par Red Hat pour ses Operators, ils permettent de définir un nouveau type d’objet dans Kubernetes. Combinés à des Operators (du code d’API en Go), ils permettent d’étendre Kubernetes pour gérer de nouveaux objets qui eux-même interagissent avec des objets Kubernetes.
+## 7. Gestion de la configuration et des versions
+### 7.1 Helm et gestion des packages
+### 7.2 GitOps et déploiement continu
 
-Exemples :
+## 8. Surveillance et Journalisation
+## 9. Kubernetes dans le Cloud
 
-- la chart officielle de la suite Elastic (ELK) définit des objets de type elasticsearch
-- KubeVirt permet de rajouter des objets de type VM pour les piloter depuis Kubernetes
-- Azure propose des objets correspondant à ses ressources du cloud Azure, pour pouvoir créer et paramétrer des ressources Azure directement via la logique de Kubernetes
 
-#### Jobs
-#### CronJobs
-#### Le Role-Based Access Control, les Roles et les RoleBindings
 
-### 5.7 Le réseau dans Kubernetes
-#### 5.7.1 Les objets Services
-#### 5.7.2 Les network policies
-#### 5.7.3 Le loadbalancing
-#### 5.7.4 Les objets Ingresses
-## 6. Helm, le gestionnaire de paquets Kubernetes
-
-# REF
+## REF
 https://cours.hadrienpelissier.fr/03-kubernetes/
 https://supports.uptime-formation.fr/05-kubernetes/
 https://kubernetes.training.datailor.fr/

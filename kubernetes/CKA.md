@@ -88,6 +88,39 @@
   - [Key Concepts](#key-concepts-4)
   - [Operational Aspects](#operational-aspects)
   - [Conclusion](#conclusion-2)
+- [14 **Imperative vs. Declarative Approaches**](#14-imperative-vs-declarative-approaches)
+  - [**Kubernetes in Practice: Imperative vs. Declarative**](#kubernetes-in-practice-imperative-vs-declarative)
+  - [**Certification Tips - Imperative Commands with Kubectl**](#certification-tips---imperative-commands-with-kubectl)
+    - [Key options to use:](#key-options-to-use)
+    - [**POD**](#pod)
+    - [**Deployment**](#deployment)
+    - [**Service**](#service)
+- [14 **Manual Scheduling**](#14-manual-scheduling)
+  - [Two Methods for Manually Scheduling Pods:](#two-methods-for-manually-scheduling-pods)
+  - [**Labels and Selectors Overview:**](#labels-and-selectors-overview)
+    - [**Real-World Example:**](#real-world-example)
+  - [**Labels and Selectors in Kubernetes:**](#labels-and-selectors-in-kubernetes)
+  - [**Connecting Objects with Labels:**](#connecting-objects-with-labels)
+    - [**Common Pitfall:**](#common-pitfall)
+  - [**Annotations:**](#annotations)
+  - [**Conclusion:**](#conclusion-3)
+- [15. **Taints and Tolerations :**](#15-taints-and-tolerations-)
+  - [**Taints and Tolerations Overview:**](#taints-and-tolerations-overview)
+    - [**Analogy:**](#analogy)
+  - [**Taints in Kubernetes:**](#taints-in-kubernetes)
+  - [**Tolerations in Kubernetes:**](#tolerations-in-kubernetes)
+  - [**How Taints and Tolerations Work Together:**](#how-taints-and-tolerations-work-together)
+  - [**Taint Effects and Pod Scheduling:**](#taint-effects-and-pod-scheduling)
+  - [**Master Node and Taints:**](#master-node-and-taints)
+  - [**Important Points to Remember:**](#important-points-to-remember)
+- [XX. **Designing a Kubernetes Cluster**](#xx-designing-a-kubernetes-cluster)
+  - [**Kubernetes Infrastructure Hosting Options**](#kubernetes-infrastructure-hosting-options)
+  - [Lecture: **High Availability in Kubernetes**](#lecture-high-availability-in-kubernetes)
+  - [HA Setup for Master Nodes and Control Plane](#ha-setup-for-master-nodes-and-control-plane)
+  - [etcd Topologies for HA](#etcd-topologies-for-ha)
+  - [**etcd in a High Availability Setup**](#etcd-in-a-high-availability-setup)
+  - [**Kubeadm for Bootstrapping a Kubernetes Cluster**](#kubeadm-for-bootstrapping-a-kubernetes-cluster)
+  - [**Provisioning VMs for Kubernetes Cluster**](#provisioning-vms-for-kubernetes-cluster)
 - [Some references:](#some-references)
 
 
@@ -912,15 +945,473 @@ Namespaces in Kubernetes provide an essential mechanism for resource isolation a
 - In the next lecture, the topic of **contexts** will be discussed, which is important for managing multiple clusters and environments.
 
 
+## 14 **Imperative vs. Declarative Approaches**
+- **Imperative Approach**: 
+   - You provide detailed instructions on how to perform a task.
+   - Example: `kubectl run`, `kubectl create`, `kubectl expose` are used to manually create and modify objects.
+   - **Pros**: Quick for simple tasks.
+   - **Cons**: Harder to manage complex configurations and track changes.
+  
+- **Declarative Approach**: 
+   - You specify the desired end state, and Kubernetes determines how to achieve it.
+   - Example: Using YAML files and `kubectl apply` to automatically create or update objects.
+   - **Pros**: Ideal for managing large environments, and configurations are easy to track and update.
+   - **Cons**: Less efficient for simple, one-time tasks.
+
+### **Kubernetes in Practice: Imperative vs. Declarative**
+- **Imperative Approach**: Quick to use commands like `kubectl create`, `kubectl edit`, and `kubectl delete` for small, one-off tasks.
+- **Declarative Approach**: Define the desired state in YAML files, then use `kubectl apply` to manage objects, enabling easy scaling and updates.
+
+### **Certification Tips - Imperative Commands with Kubectl**
+While you may mostly work in the declarative mode using YAML files, **imperative commands** can save you time during exams for quick tasks or generating templates.
+
+#### Key options to use:
+- `--dry-run=client`: Test commands without creating resources.
+- `-o yaml`: Output the command result as YAML to generate resource definitions easily.
+
+These options help generate templates that can be modified and applied, avoiding the need to write configuration files from scratch.
+
+#### **POD**
+- **Create an NGINX Pod**:
+   ```bash
+   kubectl run nginx --image=nginx
+   ```
+- **Generate POD Manifest YAML file (-o yaml). Don’t create it (--dry-run)**:
+   ```bash
+   kubectl run nginx --image=nginx --dry-run=client -o yaml
+   ```
+
+#### **Deployment**
+- **Create a deployment**:
+   ```bash
+   kubectl create deployment --image=nginx nginx
+   ```
+- **Generate Deployment YAML file (-o yaml). Don’t create it (--dry-run)**:
+   ```bash
+   kubectl create deployment --image=nginx nginx --dry-run=client -o yaml
+   ```
+- **Generate Deployment with 4 replicas**:
+   ```bash
+   kubectl create deployment nginx --image=nginx --replicas=4
+   ```
+- **Scale a deployment using the `kubectl scale` command**:
+   ```bash
+   kubectl scale deployment nginx --replicas=4
+   ```
+- **Save the YAML file for later modification**:
+   ```bash
+   kubectl create deployment nginx --image=nginx --dry-run=client -o yaml > nginx-deployment.yaml
+   ```
+
+#### **Service**
+- **Create a ClusterIP service named `redis-service` for pod `redis` on port 6379**:
+   ```bash
+   kubectl expose pod redis --port=6379 --name=redis-service --dry-run=client -o yaml
+   ```
+- **Create a NodePort service named `nginx` for pod `nginx` on port 80 and expose it on port 30080**:
+   ```bash
+   kubectl expose pod nginx --type=NodePort --port=80 --name=nginx-service --dry-run=client -o yaml
+   ```
+- **Or, generate a service with a manually specified node port**:
+   ```bash
+   kubectl create service nodeport nginx --tcp=80:80 --node-port=30080 --dry-run=client -o yaml
+   ```
+
+## 14 **Manual Scheduling**
+
+Here’s a summary of the lecture on manually scheduling a pod on a node in Kubernetes:
+
+In this session, we explore the process of manually scheduling pods without using the default Kubernetes scheduler. Typically, Kubernetes' built-in scheduler automatically assigns pods to nodes by setting the **nodeName** field in the pod's definition after running its scheduling algorithm. However, without the scheduler, pods remain in a **Pending** state until they are manually scheduled.
+
+### Two Methods for Manually Scheduling Pods:
+
+1. **Setting the nodeName field in the Pod definition:**
+   - The easiest way to manually schedule a pod is by specifying the **nodeName** field in the pod's manifest during its creation. This field assigns the pod to the desired node directly at creation time.
+   - This method must be done before the pod is created, as you cannot change the **nodeName** field for an already existing pod.
+
+2. **Creating a Binding Object:**
+   - If the pod is already created and in a pending state, you can assign it to a node by creating a **Binding Object**.
+   - The binding object includes the target node's name and is sent as a **POST request** to the pod's **binding API**.
+   - This mimics the behavior of the scheduler. The data must be in JSON format, requiring the conversion of the YAML file into JSON.
+
+In summary, manually scheduling pods can be done either by specifying the node name during pod creation or by creating a binding object to assign a pod to a node after creation. Practice these techniques in the hands-on test provided.
 
 
+### **Labels and Selectors Overview:**
+This lecture provides an in-depth explanation of **labels**, **selectors**, and **annotations** in Kubernetes, and their roles in organizing and managing Kubernetes objects.
+
+- **Labels** are key-value pairs attached to Kubernetes objects, used to organize and group resources. They can represent various characteristics, such as application name, environment (e.g., production, development), or version.
+- **Selectors** allow you to filter and select objects based on their labels, enabling you to query and operate on specific subsets of resources. For instance, you could filter all pods labeled with a specific application or version.
+
+#### **Real-World Example:**
+Imagine a collection of animals, each labeled by different attributes like class (mammal, bird), kind (domestic, wild), or color (green, brown). You could use selectors to filter based on criteria like "all green animals" or "all green birds."
+
+### **Labels and Selectors in Kubernetes:**
+Kubernetes uses labels and selectors in several ways:
+1. **Grouping Objects:** You can assign labels to Kubernetes objects like Pods, Services, and Deployments. This helps organize objects by their function, application, or environment.
+2. **Selecting Objects:** You can use the `kubectl get` command with a selector option to retrieve a specific group of objects based on labels.
+
+**Example of Defining Labels in a Pod:**
+In a pod definition file, labels are added under the `metadata` section. Labels are written in a key-value format, and you can add as many as necessary.
+```yaml
+metadata:
+  labels:
+    app: app1
+    function: frontend
+```
+
+Once labeled, you can use a selector to retrieve the object:
+```bash
+kubectl get pods --selector app=app1
+```
+
+### **Connecting Objects with Labels:**
+Kubernetes objects such as **ReplicaSets** and **Services** use labels and selectors to connect related resources:
+- **ReplicaSets:** Labels help the ReplicaSet discover and manage the correct Pods. In the ReplicaSet definition file, labels are specified under the `template` section, and the `selector` field defines which Pods should be managed.
+- **Services:** Similar to ReplicaSets, Services use selectors to find the right Pods to route traffic to. When the labels on Pods match the service selector, the connection is established.
+
+#### **Common Pitfall:**
+Beginner users might confuse labels defined on different objects. Remember:
+- Labels under the **template** section of a ReplicaSet are for the Pods.
+- Labels at the top are for the ReplicaSet itself, and they serve different purposes.
+
+### **Annotations:**
+While **labels** and **selectors** are used to group and select objects, **annotations** store metadata that is not intended for querying but rather for informational purposes. These can include:
+- Tool details (e.g., build versions, software names)
+- Contact information (e.g., phone numbers, email addresses)
+  
+Annotations do not affect how Kubernetes interacts with objects, but they help provide useful metadata.
+
+### **Conclusion:**
+Labels and selectors are essential for grouping and managing Kubernetes objects, while annotations provide additional metadata for informational purposes. Now, head over to the practice section to reinforce your understanding of working with labels, selectors, and annotations.
+
+## 15. **Taints and Tolerations :**
+
+This lecture explains the concept of **taints and tolerations** in Kubernetes, which are used to control the scheduling of pods on specific nodes. These concepts help ensure that certain pods are only placed on particular nodes while preventing others from being scheduled there.
+
+### **Taints and Tolerations Overview:**
+- **Taints** are applied to nodes and work as a way to repel pods, preventing them from being scheduled on that node unless they tolerate the taint.
+- **Tolerations** are applied to pods and allow them to be scheduled on nodes with matching taints. If a pod tolerates the taint, it can be scheduled on the node.
+
+#### **Analogy:**
+- Imagine a person sprayed with repellent (taint) to prevent bugs (pods) from landing on them.
+  - Most bugs will be repelled (pods cannot land).
+  - Some bugs are tolerant to the repellent (pods with tolerations) and will land anyway.
+  
+In Kubernetes, nodes have taints, and pods have tolerations.
+
+### **Taints in Kubernetes:**
+You can apply a taint to a node using the following command:
+```bash
+kubectl taint nodes <node-name> <key>=<value>:<effect>
+```
+- **key=value**: Identifies the taint, e.g., `app=blue`.
+- **effect**: Defines what happens to non-tolerant pods.
+  - `NoSchedule`: Pods that don’t tolerate the taint won’t be scheduled on this node.
+  - `PreferNoSchedule`: The system will try to avoid placing pods on the node but won't enforce it.
+  - `NoExecute`: New pods won’t be scheduled on the node, and existing non-tolerant pods will be evicted.
+
+**Example Command:**
+```bash
+kubectl taint nodes node1 app=blue:NoSchedule
+```
+This applies a taint on `node1` that prevents any pod that doesn’t tolerate `app=blue` from being scheduled there.
+
+### **Tolerations in Kubernetes:**
+To allow specific pods to be scheduled on tainted nodes, tolerations are added to the pod’s definition file under the `spec` section:
+```yaml
+tolerations:
+  - key: "app"
+    operator: "Equal"
+    value: "blue"
+    effect: "NoSchedule"
+```
+This toleration allows the pod to be scheduled on nodes tainted with `app=blue:NoSchedule`.
+
+### **How Taints and Tolerations Work Together:**
+- Nodes with taints restrict which pods can be scheduled on them.
+- Pods with matching tolerations can be scheduled on tainted nodes.
+
+**Example Scenario:**
+1. There are three nodes (Node1, Node2, Node3) and four pods (PodA, PodB, PodC, PodD).
+2. You taint Node1 with `app=blue:NoSchedule`, meaning only pods with a toleration for `app=blue` can be scheduled on Node1.
+3. PodD is given a toleration for `app=blue`, allowing it to be scheduled on Node1. The other pods (PodA, PodB, PodC) will be scheduled on Node2 and Node3.
+
+### **Taint Effects and Pod Scheduling:**
+- If you set the **NoExecute** taint effect, any existing non-tolerant pods on the node will be evicted.
+- The **NoSchedule** and **PreferNoSchedule** effects only affect future scheduling of pods.
+
+### **Master Node and Taints:**
+By default, the **master node** in a Kubernetes cluster is tainted to prevent pods from being scheduled on it. This is a best practice to keep management processes running smoothly on the master node. You can see this taint by running:
+```bash
+kubectl describe node <master-node-name>
+```
+
+### **Important Points to Remember:**
+- **Taints** are applied to nodes to repel pods.
+- **Tolerations** are applied to pods to allow them to tolerate specific taints.
+- **Taints and tolerations** control where pods can be scheduled but do not direct a pod to a specific node. For that, **node affinity** is used, which will be discussed in the next lecture.
+
+Head over to the coding exercises section to practice applying taints and tolerations in a Kubernetes cluster.
 
 
+Here’s a concise summary of the lecture on designing a Kubernetes cluster:
 
 
 ---
 
+## XX. **Designing a Kubernetes Cluster**
 
+**Key Considerations:**
+- **Purpose of the Cluster**: Learning, development, testing, or production.
+- **Cloud Strategy**: Self-hosted or managed by cloud providers.
+- **Workloads**: Type (web apps, big data, analytics) and scale (few or many applications).
+- **Traffic Expectations**: Continuous heavy traffic or burst traffic.
+
+**Cluster Design Based on Purpose**:
+- **Learning**: Use Minikube or single-node clusters on local VMs or cloud providers (GCP, AWS).
+- **Development/Testing**: Multi-node clusters with single master and multiple worker nodes using kubeadm or managed services (GKE, EKS, AKS).
+- **Production**: High availability (HA) clusters with multiple master nodes using kubeadm, GKE, kOps (AWS), or AKS (Azure).
+
+**Production Cluster Specifications**:
+- The cluster size can scale up to 5,000 nodes, 150,000 pods, 300,000 containers, 100 pods per node.
+- Node requirements vary based on cluster size, with cloud providers like GCP/AWS auto-selecting instance sizes.
+
+**Deployment Tools**:
+- **On-prem**: Use kubeadm for setup.
+- **Cloud**: GKE (Google), AKS (Azure), kOps (AWS) for easy provisioning and management.
+
+**Node and Storage Considerations**:
+- Use SSD-backed storage for high performance.
+- Network-based storage for multiple concurrent access.
+- Persistent storage volumes for shared access across multiple pods.
+
+**Cluster Configuration**:
+- Nodes can be physical or virtual.
+- Best practice: dedicate master nodes to control plane components (API server, etcd).
+- Separate etcd clusters from master nodes in large clusters.
+
+**Key Points**:
+- Use 64-bit Linux OS for nodes.
+- Workloads on master nodes are prevented via tainting, though this is not mandatory.
+
+**Upcoming Topics**: High availability and more detailed cluster configurations.
+
+**Certification Tip**: No need to memorize numbers; documentation provides these details.
+
+
+Here’s a summary of the lecture on Kubernetes infrastructure hosting options:
+
+---
+
+### **Kubernetes Infrastructure Hosting Options**
+
+**Key Considerations**:
+Kubernetes can be deployed on various platforms, from local machines to physical/virtual servers, or cloud environments. The choice of infrastructure depends on:
+- Purpose (learning, development, production)
+- Cloud ecosystem
+- Type of applications to be hosted
+
+**Local Deployment**:
+- **Linux**: Manually install binaries or use automated tools for quicker setup.
+- **Windows**: Kubernetes isn't natively supported. Requires virtualization software (Hyper-V, VMware, VirtualBox) to create Linux VMs for running Kubernetes.
+
+**Local Setup Solutions**:
+1. **Minikube**: Deploys a single-node cluster using VirtualBox.
+2. **Kubeadm**: Deploys single or multi-node clusters but requires pre-provisioned VMs.
+
+Local setups are ideal for learning, testing, and development, not production.
+
+**Production Clusters**:
+There are two major options:
+1. **Turnkey Solutions**: You provision VMs and use tools to deploy Kubernetes clusters. Maintenance (patching, updates) is your responsibility. Example: **Kops** for AWS.
+2. **Hosted/Managed Solutions**: The provider handles everything, including VM management and Kubernetes setup. Example: **Google Container Engine (GKE)**.
+
+**Turnkey Solutions**:
+- **OpenShift** (Red Hat): Kubernetes-based platform with additional tools and GUI for CI/CD.
+- **Cloud Foundry Container Runtime**: Deploy and manage highly available Kubernetes clusters with **BOSH**.
+- **VMware Cloud PKS**: For leveraging VMware infrastructure for Kubernetes.
+- **Vagrant**: Automates Kubernetes cluster deployment across cloud providers.
+
+**Hosted Solutions**:
+- **GKE** (Google Cloud)
+- **OpenShift Online** (Red Hat)
+- **Azure Kubernetes Service (AKS)** (Azure)
+- **Amazon EKS** (AWS)
+
+**Chosen Setup for the Course**:
+Since most students prefer a local setup with VirtualBox, the course will deploy a 3-node cluster (1 master, 2 workers) using VirtualBox VMs.
+
+---
+
+### Lecture: **High Availability in Kubernetes**
+
+**What happens if the master node fails?**  
+- If the master node goes down but worker nodes are up, your applications keep running until issues arise (e.g., a pod failure).
+- Without the master node, **control plane components** like the API server, scheduler, and replication controller become unavailable, leading to:
+  - Inability to recreate failed pods.
+  - Inability to access the cluster externally via `kubectl` or API.
+
+**Why High Availability (HA)?**  
+To prevent a single point of failure in production environments, HA configurations use **multiple master nodes**, ensuring redundancy in the control plane and across other critical components (e.g., worker nodes, replica sets).
+
+### HA Setup for Master Nodes and Control Plane
+
+In an HA configuration, each master node has its own set of control plane components:
+1. **API Server**: 
+   - All instances of the API server run in **active-active mode**. They process requests individually, and traffic is load-balanced between them.
+   - It's important to use a **load balancer** (e.g., Nginx, HAProxy) in front of the master nodes to split traffic between API servers.
+  
+2. **Scheduler and Controller Manager**:
+   - These components must run in **active-standby mode** to avoid duplicating tasks (e.g., creating more pods than necessary).
+   - A **leader election** mechanism ensures only one instance (the leader) is active at a time.
+   - Leadership is determined by which instance successfully gains a "lease" on a Kubernetes endpoint object, and the leader regularly renews the lease to maintain control.
+
+### etcd Topologies for HA
+
+**etcd** stores the state of the Kubernetes cluster and comes with two topologies:
+
+1. **Stacked Control Plane Nodes**:
+   - etcd runs on the same master nodes as the control plane components.
+   - Easier to set up, fewer nodes required.
+   - A failure in a master node also results in the loss of an etcd member, reducing redundancy.
+
+2. **External etcd**:
+   - etcd runs on dedicated servers, separate from the master nodes.
+   - More resilient: losing a master node does not affect the etcd cluster.
+   - More complex setup and management, requiring additional servers.
+  
+Regardless of topology, the **API server** must be configured to communicate with **all etcd instances** to read/write data.
+
+Conclusion
+
+In this course, we initially planned for a single master node. Now, in the HA setup, we include:
+- **Multiple master nodes** with **load balancing** for the API servers.
+- Leader election for schedulers and controller managers.
+- Depending on the topology chosen, we either run stacked control plane nodes or set up **external etcd** servers.
+
+This setup results in a total of **five nodes** for our HA Kubernetes cluster.
+
+---
+
+### **etcd in a High Availability Setup**
+
+
+In this lecture, the focus is on configuring **etcd** in a high availability (HA) setup, which is crucial for ensuring a highly available Kubernetes control plane.
+
+1. **What is etcd?**  
+   etcd is a **distributed, reliable key-value store** used to store Kubernetes' state data. It is fast, secure, and critical for the proper functioning of the cluster.
+
+2. **Why Distributed etcd?**  
+   - A single etcd instance is vulnerable to failure.
+   - In a distributed setup, etcd is replicated across multiple nodes, ensuring data is safe even if some nodes fail.
+
+3. **Consistency in etcd**:  
+   - All nodes maintain identical copies of the data.
+   - **Writes** are handled by a **leader node**, while **reads** can happen from any node.
+   - If a write request comes to a follower node, it forwards the request to the leader for processing. The leader then replicates the write to all other nodes.
+
+4. **Leader Election via Raft Protocol**:  
+   - The **Raft algorithm** is used to elect a leader among etcd nodes.
+   - Nodes use random timers to initiate leader election. The first node to finish its timer requests votes from other nodes, becoming the leader if it receives a majority of votes.
+   - If the leader becomes unavailable, a new election is triggered to elect a new leader.
+
+5. **Quorum and Fault Tolerance**:  
+   - The **quorum** is the minimum number of nodes required for the cluster to function. It is calculated as `(total nodes / 2) + 1`.
+   - In a 3-node cluster, quorum is 2. This means the cluster can tolerate one node failure and still operate.
+   - Odd numbers of nodes (e.g., 3, 5) are recommended for better fault tolerance, as even numbers can lead to split-brain scenarios during network partitioning.
+
+6. **etcd Cluster Size**:  
+   - A **minimum of three nodes** is required for an HA etcd setup.
+   - Clusters with odd numbers of nodes (e.g., 3, 5, 7) offer better fault tolerance and are preferred.
+   - Larger clusters are unnecessary, as five nodes generally provide sufficient fault tolerance for most environments.
+
+7. **Practical Setup**:  
+   - In this course, a **stacked topology** is chosen, where etcd runs on the same nodes as Kubernetes master components.
+   - The instructor sets up two nodes due to resource limitations but recommends three for production.
+
+8. **etcd Operations**:  
+   - The `etcdctl` utility is used to interact with etcd. It supports both v2 and v3 APIs, but version 3 is preferred.
+   - Example commands:
+     - To store data: `etcdctl put key value`.
+     - To retrieve data: `etcdctl get key`.
+
+---
+
+### **Kubeadm for Bootstrapping a Kubernetes Cluster**
+
+
+In this lecture, the focus is on using **kubeadm**, a tool that simplifies the process of setting up a multi-node Kubernetes cluster by automating several complex tasks.
+
+1. **What is kubeadm?**  
+   - **kubeadm** is a tool used to **bootstrap a Kubernetes cluster**.
+   - It simplifies the process of installing the essential Kubernetes components, including the **kube-apiserver**, **etcd**, and controllers, by handling configurations and certificate management.
+
+2. **Cluster Components**:  
+   - A typical Kubernetes cluster consists of **master nodes** (control plane) and **worker nodes**.
+   - The master node runs core components like the **kube-apiserver**, **etcd**, and controllers, while the worker nodes handle running the workloads (pods).
+
+3. **Challenges Without kubeadm**:  
+   - Setting up a Kubernetes cluster manually involves installing components individually across different nodes and configuring them to communicate properly.  
+   - It also requires setting up security certificates and adjusting configuration files, making the manual process **tedious and error-prone**.
+
+4. **Steps to Set Up a Kubernetes Cluster Using kubeadm**:
+   - **Provision multiple systems**: You need a few machines or virtual machines (VMs) for the master and worker nodes.
+   - **Designate roles**: Assign one node as the **master** and the rest as **worker nodes**.
+   - **Install a container runtime**: On all nodes, install a container runtime like **containerd** to handle container execution.
+   - **Install kubeadm**: Install the kubeadm tool on all nodes.
+   - **Initialize the master node**: Use kubeadm to initialize the **master node** and install required components.
+   - **Set up the POD Network**: Kubernetes requires a special network setup called the **POD Network** for communication between nodes.
+   - **Join worker nodes**: After setting up the master node and POD Network, worker nodes are joined to the cluster using kubeadm.
+   - Once the nodes have joined, the cluster is ready to deploy applications.
+
+REF:
+- The vagrant file used in the next video is available here: https://github.com/kodekloudhub/certified-kubernetes-administrator-course 
+- Here's the link to the documentation: https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+
+###  **Provisioning VMs for Kubernetes Cluster**
+
+This demo walks through the steps to provision a virtualized Kubernetes cluster environment using **VirtualBox** and **Vagrant**. The goal is to set up one **master node** and two **worker nodes**, which will later be used to form a Kubernetes cluster.
+
+1. **Tools Used**:
+   - **VirtualBox**: A hypervisor responsible for running virtual machines (VMs).
+   - **Vagrant**: An automation tool used to spin up VMs quickly using predefined configuration files. It simplifies VM provisioning with a single command.
+
+2. **Setting Up VirtualBox and Vagrant**:
+   - Install **VirtualBox** by visiting [virtualbox.org](https://www.virtualbox.org) and following the download instructions for your operating system.
+   - Install **Vagrant** by visiting the [Vagrant documentation](https://www.vagrantup.com/docs) and following installation steps for your OS.
+
+3. **Using the Vagrant File**:
+   - A **Vagrant file** containing the VM configurations is available in the course repository.
+   - **Clone the repository** to your local system by running `git clone <URL>` in the terminal.
+   - Navigate to the folder containing the Vagrant file (`cd <folder-name>`), and you'll find the configuration for the VMs.
+
+4. **VM Configuration**:
+   - The Vagrant file specifies that there will be **one master node** (kubemaster) and **two worker nodes** (kubenode01, kubenode02).
+   - The VMs will use the **192.168.56.x** network for communication.
+
+5. **Provisioning the VMs**:
+   - Run `vagrant status` to check the status of the VMs (they should be in a "not created" state initially).
+   - Use `vagrant up` to provision the VMs, which will:
+     - Pull the **Ubuntu Bionic 64** base image.
+     - Create and configure all three VMs (master and worker nodes).
+     - This process may take some time, as expected.
+
+6. **Checking the VM Status**:
+   - Once the VMs are provisioned, run `vagrant status` again to confirm that all nodes (kubemaster, kubenode01, kubenode02) are in a **running** state.
+
+7. **Accessing the VMs**:
+   - To connect to a specific VM, use `vagrant ssh <node-name>`. For example, to connect to the master node, run `vagrant ssh kubemaster`.
+   - Once connected, you can execute commands inside the VM, such as `ls -la` to verify you're in the correct environment.
+   - To disconnect, run `logout` to return to your local machine.
+
+8. **Next Steps**:
+   - In the following video, the Kubernetes cluster will be bootstrapped using **kubeadm** on these provisioned VMs.
+
+
+
+---
 
 
 ## Some references:

@@ -1,0 +1,69 @@
+
+Terraform on AZURE FROM UDEMY (see https://www.udemy.com/course/terraform-on-azure-services/)
+Terraform on AZURE FROM UDEMY (see https://www.udemy.com/course/terraform-on-azure/)
+
+
+SRC: 
+	- terraform url: https://www.terraform.io/
+	- terraform edition: https://developer.hashicorp.com/terraform/intro/terraform-editions
+	- code Url https://att-c.udemycdn.com/2022-06-23_05-30-32-27ca8d24344ae03cb03fbe17a055a20c/original.zip?response-content-disposition=attachment%3B+filename%3DCode.zip&Expires=1726510450&Signature=ah19LVAL4NKAlyRcuqdZXgAbli8frpLWqdGv069y3KHu~ZnG~uMruKf1lDv0M~DmhqknYAaYDMPmcJ6JWgp74lOXq77rAKrnPt1VvXBUxfCaC-sk7aQowEZWPF~zaXR-LBk1~QbG-VuKb4tLKN8l7EhayVsJUx4lI2rZwaHC62JBVnsN6XKecA9py8bDnEESSgsN7BNrPt9uj4jc4nunGWWnMPc0UCSKRsKVcCSOmA0KHgWEiKR4Qg5IHRZoYd1B-79xwuPoXTrBEa8VRq2K7Hqg4GzkN-07N3sZ5~idv3~SiUGLHMxwaRv8LQW~P~~630S6Tr38JO2qs4tXe4EM8Q__&Key-Pair-Id=K3MG148K9RIRF4
+GitHub SRC: https://github.com/DevopsExamples00/TerraformAzure
+
+
+Authenticating to Azure Active Directory
+
+
+	1- Authenticating to Azure Active Directory using the Azure CLI
+	2- Authenticating to Azure Active Directory using Managed Identity
+	3- Authenticating to Azure Active Directory using a Service Principal and a Client Certificate
+	4- Authenticating to Azure Active Directory using a Service Principal and a Client Secret
+	
+	
+
+
+
+Defining the provider 
+
+	URL of providers: https://registry.terraform.io/browse/providers
+	Example:  How to use the AZURE provider (https://registry.terraform.io/providers/hashicorp/azurerm/latest)
+
+	To install this provider, copy and paste this code into your Terraform configuration. Then, run terraform init.
+
+	terraform {
+	  required_providers {
+		azurerm = {
+		  source = "hashicorp/azurerm"
+		  version = "4.2.0"
+		}
+	  }
+	}
+
+	provider "azurerm" {
+	  # Configuration options
+	}
+	
+	
+---------------------------------------------- Steps 
+
+
+1- Terraform installation : https://developer.hashicorp.com/terraform/install
+
+2- Install the Azure CLI on Linux :https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt
+
+3- Authenticating to Azure Active Directory using Azure CLI
+
+	$ az login
+	and than Select a subscription
+	
+4- Defining the provider
+
+5- Creating a resource group
+
+6- Useful Terraform commands :
+	$ terraform init
+	$ terraform plan
+	$ terraform apply
+	$ terraform destroy 
+	
+	
+	

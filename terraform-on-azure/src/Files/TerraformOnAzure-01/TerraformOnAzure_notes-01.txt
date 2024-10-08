@@ -1,0 +1,218 @@
+
+
+Terraform on AZURE FROM UDEMY (see https://www.udemy.com/course/terraform-on-azure/)
+
+
+Course files :
+- You can download the course files from https://github.com/in4it/terraform-azure-course
+- Direct link to .zip: https://github.com/in4it/terraform-azure-course/archive/master.zip
+
+
+
+1- Terraform installation
+
+https://developer.hashicorp.com/terraform/install
+
+2- Install the Azure CLI on Linux
+
+https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-linux?pivots=apt
+
+3- az login to https://portal.azure.com/#@pellencst.com/resource/subscriptions/de7d9b2c-5667-4329-9880-6a954b05e336/overview
+
+4- Creating ssh keypairs 
+
+5- First steps
+
+	- An Azure Resource Group : A logical container that holds Azure resources like Network, VM,Databases
+	- A Virtual Network : Which has a private address space, and is created in a specific Azure Region
+	- A Virtual Machine
+	- That VM need a Disk for VM storage
+	- A Network interface which can give us a private & public IP address
+	- Attached to the network interface:
+		-- A Network Security Group to allow SSH access to our VM
+		-- A public IP address
+		
+To get mypublic Ip Adress use:
+	- https://whatismyipaddress.com/
+	- curl ifconfig.co
+	
+4- Second steps
+
+	- Connect via ssh to the VM 108.142.177.17 :
+		ssh 108.142.177.17 -i azuredemo -l demo
+		logout
+	- Destroy : terraform destroy 
+	
+5- Virtual Networks
+• A Virtual Network or VNet provides you with a private network in Azure
+• A VNet is the first resource you need to have before creating VMs and other services that need private network connectivity
+• You need to specify the location (region) where you want to create a VNet and the address space
+• The address space is the private IP range you can then use 
+• For example within the 192.168.0.0/16, 10.0.0.0/8, 172.16.0.0/12 ranges
+
+6- Virtual Machines
+
+	-- here's an overview of the dependencies :
+	Every resource needs to have an Azure resource group,
+	we have the azurerm_virtual_machine, that has storage, that as the VM size, and other arguments defined.
+	But before we can create azurerm_virtual_machine, we also have a dependency on a network interface,then we pass an array
+	of the network interface that we want to attach
+	this network interface also depends on the azurerm_public_ip, because we wanted to have a public IP
+	on this network interface, so that we can use a public IP on our virtual machine.
+	To create a network interface, we also need a subnet. And to have a subnet, we also need to create a virtual network. And then we can attach this network interface to this azurerm_subnet.
+	A network interface can also have a security group, so that's also something that we attach to the network interface.
+	-- So, Terraform will first then create the resource group,
+	then the virtual network, then the subnet,
+	then the network security group,
+	then the public IP, the network interface,
+	and then, only then, the virtual machine. 
+	-- You typically need the following to launch a VM:
+		• A name
+		• The location (typically the same region as your other resources)
+		• The Resource Group
+		• A Network Interface
+		• The Image (for example Ubuntu)
+		• Storage for the OS disk
+		• The VM Size
+		• The OS profile (and a Linux or Windows profile)
+	Network Interface
+		• You can assign a Network Security Group to create firewall rules for your instance
+		• You can assign a private and/or public IP address to a network interface
+			. The public IP is an external internet routable IP address
+			. The private IP is within your Virtual Network range
+			. The allocation can be Dynamic or Static
+	For a private IP addresses:
+		• IP addresses will be released when the network interface is deleted
+		• When using Dynamic allocation, the next unassigned IP address within the subnet’s IP range will be assigned
+			. For example within a subnet 192.168.0.0/24:
+			. 192.168.0.1-192.168.0.3 is reversed
+			. 192.168.0.4 will be assigned first (and if this one is taken, then 192.168.0.5, and so on)
+		• When using Static allocation, you can pick the private IP yourself
+	For a public IP addresses:
+		• You have a Basic SKU (default) and a Standard SKU (which supports Availability Zone scenarios)
+		• Basic SKUs can be Dynamic or Static, Standard SKUs only Static
+		• When assigning a Dynamic public IP, the IP will not be assigned yet when you create the public_ip resource. 
+		  It’ll only be assigned when the VM is started
+			• The IP is deleted when you stop or delete the resource
+		• If you want a static IP (immediately assigned), then you can choose for Static type, 
+			and you’ll get a static IP from an available public IP pool, until you delete the public_ip resource
+			• The IP will not be deleted when you stop or delete the resource, enabling you to attach it to another resource
+	The Image:
+		• You can find images using the marketplace
+		• Typically when you find an publisher, you can list the offers and SKUs that you need in terraform by using:
+			az vm image list -p "Microsoft"
+			az vm image list -p "Canonical"
+		
+	• OS Storage is needed to launch a Virtual Machine
+	• This is provided by an Azure Managed disk
+		• This is a highly durable and available virtualized disk with three replicas of your data
+	• Interesting arguments to mention here are:
+		• caching: you can choose what kind of caching you want locally (on the VM): None, ReadOnly, or ReadWrite
+		• managed_disk_type:
+			• LRS stands for “locally redundant storage” which replicates the data three times within one datacenter
+			• You can currently choose Standard_LRS, StandardSSD_LRS, Premium_LRS or UltraSSD_LRS
+	• VM Size:
+		• General Purpose, Compute optimized, Memory optimized, Storage optimised, GPU, High performance Compute
+		• For the demo I picked within the General Purpose the Av2-series which is good for entry level workloads
+			• Within General Purpose you have much more types with each their own characteristics:
+				• B, Dsv3, Dv3, Dasv4, Dav4, DSv2, Dv2, Av2, DC
+		• The B-series is another interesting type, because it is burstable - ideal for workloads that do not need full performance of the CPU continuously		
+		
+	
+	• OS Profile (os_profile):
+		• This is where you can set computer name, login and password
+	• OS Profile for Linux (os_profile_linux_config):
+		• Here you can configure an SSH key instead of a password if desired, which I would recommend
+
+7- Network Security Groups : this is the security rule that you attach to your network interface that then allows traffic to our VM on port SSH to our workstation or everyone.
+
+	• Network Security Groups can filter traffic from and to Azure resources
+	• A Network security Group consists of security rules, which have the following parameters:
+		• Name: unique name of the security group
+		• Priority: A number between 100 and 4096, with lower numbers processed first (So if you are number 100, that rule will be processed first,
+			if you are a higher number, those rules will be processed after the lower ones.)
+		• Source or destination IP range (or alternatively a service tag / application security group)
+		• Source & Destination Port Range
+		• IP Protocol: TCP / UDP / ICMP / Any
+		• Direction: incoming / outgoing
+		• Action: Allow / Deny
+
+	-- So this is one rule and then every inbound and outbound network security group also has default rules.
+
+	• A newly created Network Security Group has these default inbound rules:
+		
+		Priority	Source 				Source Ports 	Destination 		Destination ports 	Protocol 	Access 
+		
+		65000 		VirtualNetwork 		0-65535 		VirtualNetwork 		0-65535 		 	Any 		Allow
+		65001 		Azure LoadBalancer 	0-65535 		0.0.0.0/0 			0-65535 			Any 		Allow
+		65500 		0.0.0.0/0 			0-65535 		0.0.0.0/0 			0-65535 			Any 		Deny
+		
+		
+		We have two allow rules and one deny rule. 
+
+		Inbound by default is going to deny all the traffic, that's the last rule here,
+
+		so 0.0.0.0/0 matches everything, all the ports, all destinations, all destination ports, any protocol, and it's going to deny everything. 
+
+		So the last rule here is going to make sure that it denies everything.
+
+		Then there are two more rules that are going to allow access if the source is a VirtualNetwork or if the source is an AzureLoadBalancer.
+
+		So the VirtualNetwork and the AzureLoadBalancer are service tags.
+
+		The first rule is basically saying that we're allowing traffic within the VirtualNetwork.
+
+		We allow two VMs within the same VitrualNetwork to talk to each other, and we also allow
+
+		the AzureLoadBalancer service tag to access to our VM.
+	
+
+
+	• A newly created Network Security Group has these default outbound rules:
+		
+		
+		Priority	Source 				Source Ports 	Destination 		Destination ports 	Protocol 	Access 
+		
+		65000 		VirtualNetwork 		0-65535 		VirtualNetwork 		0-65535 		 	Any 		Allow
+		65001 		Azure LoadBalancer 	0-65535 		Internet 			0-65535 			Any 		Allow
+		65500 		0.0.0.0/0 			0-65535 		0.0.0.0/0 			0-65535 			Any 		Deny
+
+
+		But then the second to last one is actually going to allow all outgoing traffic to the internet.
+		If you are on a VM you actually by default have outgoing access to the internet,
+		so you can download updates and things like that by default.
+		And you also have access within the VirtualNetwork.
+		That's the first rule.
+		
+	• Our inbound Network Security Group rules for the first steps VM will look like this:
+
+		Priority	Source 					Source Ports 	Destination 		Destination ports 	Protocol 	Access 
+		
+		65000 		var.ssh-sourceaddress     * 			* 					22 					Tcp 		Allow
+					(* or IP range) 		
+		65000 		VirtualNetwork 			0-65535 		VirtualNetwork 		0-65535 		 	Any 		Allow
+		65001 		Azure LoadBalancer 		0-65535 		0.0.0.0/0 			0-65535 			Any 		Allow
+		65500 		0.0.0.0/0 				0-65535 		0.0.0.0/0 			0-65535 			Any 		Deny
+		
+	When creating security groups, instead of IP addresses, you can use Service Tags or Application Security Groups
+		• Service Tags are predefined by Azure, for example:
+			• VirtualNetwork: The VirtualNetwork address space, for example 10.0.0.0/16
+				For example, the VirtualNetwork is the VirtualNetwork address space, for example 10.0.0.0/16.
+				So this you find in a default inbound and outbound.
+				Access within the VirtualNetwork is actually allowed by default.
+			• AzureLoadBalancer: translates to the Virtual IP where Azure health checks originates from
+				By default Azure can do health checks on your VM to see whether the backend
+				of an AzureLoadBalancer is healthy.
+			• Internet: Outside the VirtualNetwork, reachable by the public internet	
+
+8- Application Security Groups
+
+	• Application Security Groups allow you to group Virtual Machines
+	• Instead of using IP addresses, you can use group names instead, making your Network Security Groups much easier to maintain
+	• You will need to associate (based to link) one or more Network Interfaces to an Application Security Group
+		• You can associate multiple network interfaces that make up 1 application and call the Application Security Group “MyApplication”
+	• Afterwards you’ll be able to use that “MyApplication” within a network security rule, rather than specifying the single IP addresses
+		Without application security groups you would need three rules, because you have three IP addresses.
+		Three network interfaces. 
+		With application security groups you bundle those network interfaces and then you only need one security group rule within your network security group.
+		
