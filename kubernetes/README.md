@@ -3,7 +3,7 @@
 - [Table of contents](#table-of-contents)
 - [1. Introduction](#1-introduction)
   - [**Concepts de Kubernetes** :](#concepts-de-kubernetes-)
-    - [Haute disponibilité](#haute-disponibilité)
+    - [Haute disponibilité (hight availability)](#haute-disponibilité-hight-availability)
     - [Répartition de charge (load balancing)](#répartition-de-charge-load-balancing)
     - [Healthchecks](#healthchecks)
     - [Découverte de service (service discovery)](#découverte-de-service-service-discovery)
@@ -40,6 +40,9 @@
   - [La commande apply](#la-commande-apply)
   - [Syntaxe de base d’une description YAML Kubernetes](#syntaxe-de-base-dune-description-yaml-kubernetes)
   - [3.1 Les namespaces](#31-les-namespaces)
+    - [Key Concepts](#key-concepts-1)
+    - [Operational Aspects](#operational-aspects)
+    - [Conclusion](#conclusion)
   - [3.2 Les Pods](#32-les-pods)
     - [Key Concepts of Pods:](#key-concepts-of-pods)
     - [Containers \& Pods in a Non-Kubernetes Environment:](#containers--pods-in-a-non-kubernetes-environment)
@@ -58,7 +61,7 @@
         - [Replica Set YAML Example:](#replica-set-yaml-example)
         - [Differences:](#differences)
       - [Commands](#commands)
-      - [Key Concepts:](#key-concepts-1)
+      - [Key Concepts:](#key-concepts-2)
   - [3.4 Les Deployments (deploy)](#34-les-deployments-deploy)
     - [Key Features of Kubernetes Deployments:](#key-features-of-kubernetes-deployments)
     - [Deployments vs. ReplicaSets](#deployments-vs-replicasets)
@@ -84,11 +87,39 @@
     - [**Connecting Services to Pods**](#connecting-services-to-pods)
     - [**Load Balancing and High Availability**](#load-balancing-and-high-availability)
     - [**Service Flexibility and Adaptation**](#service-flexibility-and-adaptation)
+  - [3.6 **ClusterIP Services**](#36-clusterip-services)
+    - [Key Concepts:](#key-concepts-3)
+    - [Creating a ClusterIP Service:](#creating-a-clusterip-service)
+    - [Conclusion:](#conclusion-1)
+  - [3.7 **LoadBalancer Services**](#37-loadbalancer-services)
+    - [Key Concepts:](#key-concepts-4)
+    - [Using LoadBalancer in Kubernetes:](#using-loadbalancer-in-kubernetes)
+    - [Conclusion:](#conclusion-2)
     - [3.6.5 les Secrets](#365-les-secrets)
     - [3.6.6 Les CRD et Operators](#366-les-crd-et-operators)
     - [Jobs](#jobs)
     - [CronJobs](#cronjobs)
     - [Le Role-Based Access Control, les Roles et les RoleBindings](#le-role-based-access-control-les-roles-et-les-rolebindings)
+- [4. Scheduling dans Kubernetes](#4-scheduling-dans-kubernetes)
+  - [4. Qu'est-ce que le scheduling ?](#4-quest-ce-que-le-scheduling-)
+  - [4.1 **Manual Scheduling**](#41-manual-scheduling)
+    - [Two Methods for Manually Scheduling Pods:](#two-methods-for-manually-scheduling-pods)
+    - [**Labels and Selectors Overview:**](#labels-and-selectors-overview)
+      - [**Real-World Example:**](#real-world-example)
+    - [**Labels and Selectors in Kubernetes:**](#labels-and-selectors-in-kubernetes)
+    - [**Connecting Objects with Labels:**](#connecting-objects-with-labels)
+      - [**Common Pitfall:**](#common-pitfall)
+    - [**Annotations:**](#annotations)
+    - [**Conclusion:**](#conclusion-3)
+    - [4.3 **Taints and Tolerations :**](#43-taints-and-tolerations-)
+    - [**Taints and Tolerations Overview:**](#taints-and-tolerations-overview)
+      - [**Analogy:**](#analogy)
+    - [**Taints in Kubernetes:**](#taints-in-kubernetes)
+    - [**Tolerations in Kubernetes:**](#tolerations-in-kubernetes)
+    - [**How Taints and Tolerations Work Together:**](#how-taints-and-tolerations-work-together)
+    - [**Taint Effects and Pod Scheduling:**](#taint-effects-and-pod-scheduling)
+    - [**Master Node and Taints:**](#master-node-and-taints)
+    - [**Important Points to Remember:**](#important-points-to-remember)
 - [4. Le stockage dans Kubernetes](#4-le-stockage-dans-kubernetes)
   - [4.1 StorageClasses](#41-storageclasses)
   - [4.2 StatefulSets](#42-statefulsets)
@@ -125,7 +156,7 @@ Avec la transition des architectures monolithiques vers les microservices et l'u
 - **Récupération** : assure des mécanismes de sauvegarde et de restauration des données en cas de problème infrastructurel.
 
 ### **Concepts de Kubernetes** :
-#### Haute disponibilité
+#### Haute disponibilité (hight availability)
 - Faire en sorte qu’un service ait un “uptime” élevé.
 - On veut que le service soit tout le temps accessible même lorsque certaines ressources manquent :
   - elles tombent en panne
@@ -212,15 +243,26 @@ Voici quelques exemples d'écosystèmes Kubernetes populaires :
 - **k3s** : Un écosystème Kubernetes fait par l’entreprise Rancher et axé sur la légèreté. Il remplace etcd par une base de données Postgres, utilise Traefik pour l’ingress et Klipper pour le loadbalancing.
 - **Openshift** : Une version de Kubernetes configurée et optimisée par Red Hat pour être utilisée dans son écosystème. Tout est intégré donc plus guidé, avec l’inconvénient d’être un peu captif·ve de l’écosystème et des services vendus par Red Hat.
   
-![image info](./src/imgs/k8s_archi_basic.png)
 
 ## 2. Architecture de Kubernetes:
+
+Kubernetes adopte une architecture **master/worker**, où un cluster Kubernetes est composé d'au moins un nœud maître (master node) et de plusieurs nœuds de travail (worker nodes), également appelés simplement "nœuds". Ces nœuds peuvent être des machines physiques ou virtuelles; vous interagirez rarement directement avec les nœuds.
+
+- **Nœud maître** : il orchestre l'ensemble du cluster. Il gère la planification des applications, la distribution des ressources et assure la communication entre les nœuds de travail.
+    Le “master” fait référence à un ensemble de processus gérant l’état du cluster. Le master peut également être répliqué pour la disponibilité et la redondance.
+- **Nœuds de travail** : ce sont les machines sur lesquelles les conteneurs d'applications s'exécutent. Chaque nœud de travail est sous la supervision du nœud maître et héberge des pods qui contiennent les conteneurs.
+  
+Cette architecture permet une gestion flexible et évolutive des applications, avec une séparation claire des rôles entre la gestion du cluster (nœud maître) et l'exécution des tâches (nœuds de travail).
+
+![image info](./src/imgs/k8s_archi_basic.png)
+
 
 We start with a basic overview of the **Kubernetes cluster architecture**.
 
 At a high level, Kubernetes manages applications through containers in an automated manner, ensuring communication between services and scaling as required.
 
 Let’s use an analogy of ships to understand the architecture.
+
 
 ### **1. Worker Nodes (Cargo Ships):**
 Worker nodes host applications as containers. These nodes are like cargo ships, which do the actual work of carrying containers. Containers are loaded, managed, and executed here. Each worker node has:
@@ -260,15 +302,6 @@ The master node is like a control ship, managing the entire fleet of worker node
 The **master node** ensures the health and management of the cluster, while the **worker nodes** handle running the containers.
 
 In the upcoming sections, we will dive deeper into these components and how they work together to keep Kubernetes clusters running efficiently.
-
-
-Kubernetes adopte une architecture **master/worker**, où un cluster Kubernetes est composé d'au moins un nœud maître (master node) et de plusieurs nœuds de travail (worker nodes), également appelés simplement "nœuds". Ces nœuds peuvent être des machines physiques ou virtuelles; vous interagirez rarement directement avec les nœuds.
-
-- **Nœud maître** : il orchestre l'ensemble du cluster. Il gère la planification des applications, la distribution des ressources et assure la communication entre les nœuds de travail.
-    Le “master” fait référence à un ensemble de processus gérant l’état du cluster. Le master peut également être répliqué pour la disponibilité et la redondance.
-- **Nœuds de travail** : ce sont les machines sur lesquelles les conteneurs d'applications s'exécutent. Chaque nœud de travail est sous la supervision du nœud maître et héberge des pods qui contiennent les conteneurs.
-  
-Cette architecture permet une gestion flexible et évolutive des applications, avec une séparation claire des rôles entre la gestion du cluster (nœud maître) et l'exécution des tâches (nœuds de travail).
 
 **Master Node in K8s cluster:**
 
@@ -342,7 +375,7 @@ In future lessons, you'll explore how to set up etcd in a high-availability envi
 
 ### kube-apiserver
 
-Hello, and welcome to this lecture. In this lecture, we will discuss the **kube-apiserver**, the core management component in Kubernetes.
+We will discuss the **kube-apiserver**, the core management component in Kubernetes.
 
 When you run a `kubectl` command, it communicates with the **kube-apiserver**, which handles the following key tasks:
 1. **Authenticating and validating requests**.
@@ -568,6 +601,64 @@ créer une nouvelle configuration dans la kubeconfig pour changer le namespace p
 Kubernetes gère lui-même ses composants internes sous forme de pods et services.
 
 - Si vous ne trouvez pas un objet, essayez de lancer la commande kubectl avec l’option **-**A ou **--all-namespaces**
+
+In this lecture, we explore **namespaces** in Kubernetes, which provide a way to organize and manage resources within a cluster. Here's a breakdown of the key concepts and operational aspects covered in the lecture:
+
+#### Key Concepts
+
+1. **Analogy of Namespaces**:
+   - Just as two boys named Mark are differentiated by their last names (e.g., Mark Smith and Mark Williams), namespaces in Kubernetes help distinguish resources.
+   - Each namespace acts like a separate house, allowing for resource isolation and management.
+
+2. **Default Namespaces**:
+   - The default namespace is automatically created by Kubernetes when a cluster is set up. This is where most of the objects (like Pods, Deployments, Services) are created unless specified otherwise.
+   - Kubernetes also creates two additional namespaces:
+     - **kube-system**: For Kubernetes system components and services.
+     - **kube-public**: For resources accessible to all users.
+
+3. **Creating and Using Custom Namespaces**:
+   - You can create your own namespaces to isolate resources. For example, separate namespaces for development and production environments help prevent accidental modifications across environments.
+   - Namespaces allow for resource quotas, defining how many resources can be used, which ensures fair resource distribution.
+
+4. **Communication Between Namespaces**:
+   - Resources within the same namespace can refer to each other by name.
+   - To communicate with services in other namespaces, use the format: `servicename.namespace.svc.cluster.local`. The last part (`cluster.local`) is the default domain name for the cluster.
+
+#### Operational Aspects
+
+1. **Listing Pods by Namespace**:
+   - Use `kubectl get pods` to list pods in the default namespace.
+   - To list pods in another namespace, include the `--namespace` option, like `kubectl get pods --namespace=kube-system`.
+
+2. **Creating a Pod in a Specific Namespace**:
+   - You can specify the namespace when creating a Pod with `kubectl create -f pod-definition.yaml --namespace=dev`.
+   - Alternatively, include the namespace in the Pod definition file under the metadata section.
+
+3. **Creating a New Namespace**:
+   - Use a namespace definition file, specifying `apiVersion: v1`, `kind: Namespace`, and a `metadata` section with a name.
+   - Or run the command: `kubectl create namespace dev`.
+
+4. **Switching Context to a Namespace**:
+   - To avoid specifying the namespace every time, set the current context to a specific namespace using:
+     ```
+     kubectl config set-context --current --namespace=dev
+     ```
+   - After this, you can run `kubectl get pods` without specifying the namespace.
+
+5. **Viewing All Pods Across Namespaces**:
+   - To see all pods in all namespaces, use:
+     ```
+     kubectl get pods --all-namespaces
+     ```
+
+6. **Resource Quotas**:
+   - To limit resources in a namespace, create a resource quota definition file that specifies the namespace and desired limits (e.g., pods, CPU, memory).
+   - Resource quotas help manage resource allocation and ensure that no single namespace consumes more than its share.
+
+#### Conclusion
+Namespaces in Kubernetes provide an essential mechanism for resource isolation and management, especially as applications grow and require different environments (like development, testing, and production). They facilitate better organization and help prevent conflicts between resources while enabling easier resource management through quotas and policies.
+
+
 ### 3.2 Les Pods
 Un Pod est l’unité d’exécution de base d’une application Kubernetes que vous créez ou déployez. Un Pod représente des process en cours d’exécution dans votre Cluster.
 
@@ -1189,6 +1280,119 @@ This lecture provides a comprehensive overview of **Kubernetes Services** and th
 In conclusion, **Kubernetes Services** are essential for enabling connectivity within a cluster, and between a cluster and the outside world. They provide load balancing, internal communication, and the ability to expose applications externally. The creation and management of services is straightforward, and Kubernetes handles much of the complexity under the hood, particularly in dynamic environments where Pods are constantly changing.
 
 
+### 3.6 **ClusterIP Services**
+
+This lecture explains how **Kubernetes ClusterIP Services** are used to enable communication between different components of a full-stack application hosted in a Kubernetes cluster.
+
+#### Key Concepts:
+
+1. **Full-Stack Application in Kubernetes**:
+   - Applications often have multiple layers like front-end servers, back-end servers, databases (e.g., MySQL), and caching systems (e.g., Redis). Each of these is typically hosted in separate Pods.
+   
+2. **Dynamic Pod IPs**:
+   - Pods in Kubernetes have dynamic IP addresses, which change when Pods are recreated. This makes direct communication between Pods via their IPs unreliable.
+
+3. **ClusterIP Service**:
+   - A **ClusterIP Service** solves this issue by grouping Pods that perform the same function (e.g., multiple backend servers) under a single service IP, which remains static.
+   - The service forwards traffic to one of the Pods in the group, effectively load-balancing the requests.
+   - Other Pods can access this service using the service’s **ClusterIP** or the service name.
+
+#### Creating a ClusterIP Service:
+
+1. **Service Definition File**:
+   A typical service definition in Kubernetes includes:
+   - **apiVersion**: V1
+   - **kind**: Service
+   - **metadata**: Contains the name (e.g., "backend").
+   - **spec**:
+     - **type**: ClusterIP (default type, optional).
+     - **ports**: Defines the port where the service and the backend Pods are exposed (e.g., port 80).
+     - **selector**: Specifies which Pods this service targets, by matching labels on the Pods.
+
+2. **Example Definition**:
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: backend-app
+```
+
+3. **Creating the Service**:
+   Use the `kubectl create` command:
+   ```bash
+   kubectl create -f service-definition.yaml
+   ```
+
+4. **Verifying the Service**:
+   To view the services created:
+   ```bash
+   kubectl get services
+   ```
+
+   This will show the **ClusterIP** and the port mappings.
+
+#### Conclusion:
+The **ClusterIP** service provides a stable network endpoint within the cluster to enable communication between different parts of the application. It abstracts the complexities of dynamic Pod IPs and ensures smooth internal communication.
+
+### 3.7 **LoadBalancer Services**
+
+This lecture covers the **LoadBalancer** service type in Kubernetes, which is commonly used to expose applications to external users with a single URL. It provides an easy way to manage external traffic for applications running in cloud environments like AWS, Google Cloud, or Azure.
+
+#### Key Concepts:
+
+1. **NodePort Services**:
+   - The **NodePort** service exposes an application on a static port on all worker nodes in the Kubernetes cluster. Each node can then forward traffic from that port to the Pods running the service.
+   - This works well for small setups, but users would need to know the specific node IP and port to access the application, which isn't user-friendly.
+
+2. **External Load Balancer**:
+   - Instead of providing individual node IP and port combinations to users, they typically want a single URL like `votingapp.com` or `resultapp.com`.
+   - One solution is to set up an external load balancer manually (e.g., using **HAProxy** or **Nginx**), but this requires extra VMs, configuration, and ongoing maintenance.
+
+3. **Cloud Provider Integration**:
+   - When running Kubernetes on cloud platforms like **Google Cloud Platform (GCP)**, **AWS**, or **Azure**, Kubernetes can automatically provision the cloud provider’s native load balancer.
+   - By setting the service type to **LoadBalancer**, Kubernetes integrates with the cloud platform’s load balancer service, automatically routing traffic to the correct Pods.
+   
+#### Using LoadBalancer in Kubernetes:
+
+- **How LoadBalancer Works**:
+   When you create a service of type `LoadBalancer` in Kubernetes on a supported cloud platform, the platform's native load balancer is automatically set up. It gives you a single external IP address that directs traffic to the appropriate worker nodes and then forwards it to the correct Pods based on the service definition.
+
+- **Service Definition for LoadBalancer**:
+   To create a service of type LoadBalancer, you modify the service definition to specify `type: LoadBalancer`:
+
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 80
+  selector:
+    app: frontend-app
+```
+
+- **Key Details**:
+   - **port**: This is the port exposed by the LoadBalancer.
+   - **targetPort**: The port on which the application is listening within the Pods.
+   - **selector**: Labels to select the appropriate Pods to route traffic to.
+
+4. **Supported Platforms**:
+   - This service type only works on supported cloud platforms (e.g., AWS, GCP, Azure). In these environments, Kubernetes takes care of creating and configuring the load balancer for you.
+   - If you try this on unsupported environments like **VirtualBox** or local Kubernetes setups (e.g., Minikube), it falls back to **NodePort** behavior, as no external load balancer is available.
+
+#### Conclusion:
+The **LoadBalancer** service in Kubernetes simplifies exposing applications with a single URL to users by leveraging cloud provider integrations. It removes the need for manual load balancer setup, making the deployment process smoother in cloud environments.
+
 
 
 #### 3.6.5 les Secrets
@@ -1213,6 +1417,148 @@ Exemples :
 #### Jobs
 #### CronJobs
 #### Le Role-Based Access Control, les Roles et les RoleBindings
+
+
+## 4. Scheduling dans Kubernetes
+### 4. Qu'est-ce que le scheduling ?
+### 4.1 **Manual Scheduling**
+
+Here’s a summary of the lecture on manually scheduling a pod on a node in Kubernetes:
+
+In this session, we explore the process of manually scheduling pods without using the default Kubernetes scheduler. Typically, Kubernetes' built-in scheduler automatically assigns pods to nodes by setting the **nodeName** field in the pod's definition after running its scheduling algorithm. However, without the scheduler, pods remain in a **Pending** state until they are manually scheduled.
+
+#### Two Methods for Manually Scheduling Pods:
+
+1. **Setting the nodeName field in the Pod definition:**
+   - The easiest way to manually schedule a pod is by specifying the **nodeName** field in the pod's manifest during its creation. This field assigns the pod to the desired node directly at creation time.
+   - This method must be done before the pod is created, as you cannot change the **nodeName** field for an already existing pod.
+
+2. **Creating a Binding Object:**
+   - If the pod is already created and in a pending state, you can assign it to a node by creating a **Binding Object**.
+   - The binding object includes the target node's name and is sent as a **POST request** to the pod's **binding API**.
+   - This mimics the behavior of the scheduler. The data must be in JSON format, requiring the conversion of the YAML file into JSON.
+
+In summary, manually scheduling pods can be done either by specifying the node name during pod creation or by creating a binding object to assign a pod to a node after creation. Practice these techniques in the hands-on test provided.
+
+
+#### **Labels and Selectors Overview:**
+This lecture provides an in-depth explanation of **labels**, **selectors**, and **annotations** in Kubernetes, and their roles in organizing and managing Kubernetes objects.
+
+- **Labels** are key-value pairs attached to Kubernetes objects, used to organize and group resources. They can represent various characteristics, such as application name, environment (e.g., production, development), or version.
+- **Selectors** allow you to filter and select objects based on their labels, enabling you to query and operate on specific subsets of resources. For instance, you could filter all pods labeled with a specific application or version.
+
+##### **Real-World Example:**
+Imagine a collection of animals, each labeled by different attributes like class (mammal, bird), kind (domestic, wild), or color (green, brown). You could use selectors to filter based on criteria like "all green animals" or "all green birds."
+
+#### **Labels and Selectors in Kubernetes:**
+Kubernetes uses labels and selectors in several ways:
+1. **Grouping Objects:** You can assign labels to Kubernetes objects like Pods, Services, and Deployments. This helps organize objects by their function, application, or environment.
+2. **Selecting Objects:** You can use the `kubectl get` command with a selector option to retrieve a specific group of objects based on labels.
+
+**Example of Defining Labels in a Pod:**
+In a pod definition file, labels are added under the `metadata` section. Labels are written in a key-value format, and you can add as many as necessary.
+```yaml
+metadata:
+  labels:
+    app: app1
+    function: frontend
+```
+
+Once labeled, you can use a selector to retrieve the object:
+```bash
+kubectl get pods --selector app=app1
+```
+
+#### **Connecting Objects with Labels:**
+Kubernetes objects such as **ReplicaSets** and **Services** use labels and selectors to connect related resources:
+- **ReplicaSets:** Labels help the ReplicaSet discover and manage the correct Pods. In the ReplicaSet definition file, labels are specified under the `template` section, and the `selector` field defines which Pods should be managed.
+- **Services:** Similar to ReplicaSets, Services use selectors to find the right Pods to route traffic to. When the labels on Pods match the service selector, the connection is established.
+
+##### **Common Pitfall:**
+Beginner users might confuse labels defined on different objects. Remember:
+- Labels under the **template** section of a ReplicaSet are for the Pods.
+- Labels at the top are for the ReplicaSet itself, and they serve different purposes.
+
+#### **Annotations:**
+While **labels** and **selectors** are used to group and select objects, **annotations** store metadata that is not intended for querying but rather for informational purposes. These can include:
+- Tool details (e.g., build versions, software names)
+- Contact information (e.g., phone numbers, email addresses)
+  
+Annotations do not affect how Kubernetes interacts with objects, but they help provide useful metadata.
+
+#### **Conclusion:**
+Labels and selectors are essential for grouping and managing Kubernetes objects, while annotations provide additional metadata for informational purposes. Now, head over to the practice section to reinforce your understanding of working with labels, selectors, and annotations.
+
+#### 4.3 **Taints and Tolerations :**
+
+This lecture explains the concept of **taints and tolerations** in Kubernetes, which are used to control the scheduling of pods on specific nodes. These concepts help ensure that certain pods are only placed on particular nodes while preventing others from being scheduled there.
+
+#### **Taints and Tolerations Overview:**
+- **Taints** are applied to nodes and work as a way to repel pods, preventing them from being scheduled on that node unless they tolerate the taint.
+- **Tolerations** are applied to pods and allow them to be scheduled on nodes with matching taints. If a pod tolerates the taint, it can be scheduled on the node.
+
+##### **Analogy:**
+- Imagine a person sprayed with repellent (taint) to prevent bugs (pods) from landing on them.
+  - Most bugs will be repelled (pods cannot land).
+  - Some bugs are tolerant to the repellent (pods with tolerations) and will land anyway.
+  
+In Kubernetes, nodes have taints, and pods have tolerations.
+
+#### **Taints in Kubernetes:**
+You can apply a taint to a node using the following command:
+```bash
+kubectl taint nodes <node-name> <key>=<value>:<effect>
+```
+- **key=value**: Identifies the taint, e.g., `app=blue`.
+- **effect**: Defines what happens to non-tolerant pods.
+  - `NoSchedule`: Pods that don’t tolerate the taint won’t be scheduled on this node.
+  - `PreferNoSchedule`: The system will try to avoid placing pods on the node but won't enforce it.
+  - `NoExecute`: New pods won’t be scheduled on the node, and existing non-tolerant pods will be evicted.
+
+**Example Command:**
+```bash
+kubectl taint nodes node1 app=blue:NoSchedule
+```
+This applies a taint on `node1` that prevents any pod that doesn’t tolerate `app=blue` from being scheduled there.
+
+#### **Tolerations in Kubernetes:**
+To allow specific pods to be scheduled on tainted nodes, tolerations are added to the pod’s definition file under the `spec` section:
+```yaml
+tolerations:
+  - key: "app"
+    operator: "Equal"
+    value: "blue"
+    effect: "NoSchedule"
+```
+This toleration allows the pod to be scheduled on nodes tainted with `app=blue:NoSchedule`.
+
+#### **How Taints and Tolerations Work Together:**
+- Nodes with taints restrict which pods can be scheduled on them.
+- Pods with matching tolerations can be scheduled on tainted nodes.
+
+**Example Scenario:**
+1. There are three nodes (Node1, Node2, Node3) and four pods (PodA, PodB, PodC, PodD).
+2. You taint Node1 with `app=blue:NoSchedule`, meaning only pods with a toleration for `app=blue` can be scheduled on Node1.
+3. PodD is given a toleration for `app=blue`, allowing it to be scheduled on Node1. The other pods (PodA, PodB, PodC) will be scheduled on Node2 and Node3.
+
+#### **Taint Effects and Pod Scheduling:**
+- If you set the **NoExecute** taint effect, any existing non-tolerant pods on the node will be evicted.
+- The **NoSchedule** and **PreferNoSchedule** effects only affect future scheduling of pods.
+
+#### **Master Node and Taints:**
+By default, the **master node** in a Kubernetes cluster is tainted to prevent pods from being scheduled on it. This is a best practice to keep management processes running smoothly on the master node. You can see this taint by running:
+```bash
+kubectl describe node <master-node-name>
+```
+
+#### **Important Points to Remember:**
+- **Taints** are applied to nodes to repel pods.
+- **Tolerations** are applied to pods to allow them to tolerate specific taints.
+- **Taints and tolerations** control where pods can be scheduled but do not direct a pod to a specific node. For that, **node affinity** is used, which will be discussed in the next lecture.
+
+Head over to the coding exercises section to practice applying taints and tolerations in a Kubernetes cluster.
+
+---
 
 
 ## 4. Le stockage dans Kubernetes
@@ -1282,15 +1628,12 @@ Les objets ConfigMaps permettent d’injecter dans des pods des fichiers de conf
 ### 6.4 Network Policies
 ### 6.5 RBAC (Role-Based Access Control)
 
-
 ## 7. Gestion de la configuration et des versions
 ### 7.1 Helm et gestion des packages
 ### 7.2 GitOps et déploiement continu
 
 ## 8. Surveillance et Journalisation
 ## 9. Kubernetes dans le Cloud
-
-
 
 ## REF
 https://cours.hadrienpelissier.fr/03-kubernetes/
